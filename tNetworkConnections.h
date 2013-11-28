@@ -74,6 +74,14 @@ public:
 
   tNetworkConnections();
 
+  /*!
+   * \return Number of network connections stored in this annotation
+   */
+  size_t Count()
+  {
+    return connections.size();
+  }
+
 //----------------------------------------------------------------------
 // Private fields and methods
 //----------------------------------------------------------------------
