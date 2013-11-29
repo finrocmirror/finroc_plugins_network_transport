@@ -42,6 +42,7 @@
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
 #include "core/tPlugin.h"
+#include "core/port/tAbstractPort.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
@@ -79,15 +80,34 @@ public:
 
   tNetworkTransportPlugin();
 
-//----------------------------------------------------------------------
-// Private fields and methods
-//----------------------------------------------------------------------
-private:
+
+  /*!
+   * Connect local port to port in remote runtime environment using this
+   * network transport plugin.
+   *
+   * \param local_port Local port to connect
+   * \param remote_runtime_uuid UUID of remote runtime
+   * \param remote_port_handle Handle of remote port
+   * \param remote_port_link Link of port in remote runtime environment
+   * \return Returns error message if connecting failed. On success an empty string is returned.
+   */
+  virtual std::string Connect(core::tAbstractPort& local_port, const std::string& remote_runtime_uuid,
+                              int remote_port_handle, const std::string remote_port_link) = 0;
 
   /*!
    * \return Returns a list of all network transport plugins that have been registered for current finroc runtime environment
    */
   static const std::vector<tNetworkTransportPlugin*>& GetAll();
+
+  /*!
+   * \return Unique identification of transport mechanism (typically, the plugin name should be used - e.g. "tcp")
+   */
+  virtual const char* GetId() = 0;
+
+//----------------------------------------------------------------------
+// Private fields and methods
+//----------------------------------------------------------------------
+private:
 
 };
 
