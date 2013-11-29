@@ -73,6 +73,29 @@ tNetworkConnections::tNetworkConnections() :
   connections()
 {}
 
+void tNetworkConnections::Add(const tNetworkConnection& connection)
+{
+  for (size_t i = 0; i < connections.size(); i++)
+  {
+    if (connections[i] == connection)
+    {
+      return;
+    }
+  }
+  connections.push_back(connection);
+}
+
+void tNetworkConnections::Remove(const tNetworkConnection& connection)
+{
+  for (size_t i = 0; i < connections.size(); i++)
+  {
+    if (connections[i] == connection)
+    {
+      connections.erase(connections.begin() + i);
+      i--;
+    }
+  }
+}
 
 rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnections& connections)
 {

@@ -75,12 +75,26 @@ public:
   tNetworkConnections();
 
   /*!
+   * Adds specified connection if it is not in list yet
+   *
+   * \param connection Connection to add
+   */
+  void Add(const tNetworkConnection& connection);
+
+  /*!
    * \return Number of network connections stored in this annotation
    */
   size_t Count()
   {
     return connections.size();
   }
+
+  /*!
+   * Removed specified connection if it is in list
+   *
+   * \param connection Connection to remove
+   */
+  void Remove(const tNetworkConnection& connection);
 
 //----------------------------------------------------------------------
 // Private fields and methods
