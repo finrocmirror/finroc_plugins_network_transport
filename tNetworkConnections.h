@@ -1,6 +1,6 @@
 //
 // You received this file as part of Finroc
-// A Framework for intelligent robot control
+// A framework for intelligent robot control
 //
 // Copyright (C) Finroc GbR (finroc.org)
 //
