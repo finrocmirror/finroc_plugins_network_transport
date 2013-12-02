@@ -68,9 +68,35 @@ namespace network_transport
 
 tNetworkConnection::tNetworkConnection() :
   encoding(tDestinationEncoding::NONE),
+  destination_is_source(false),
   uuid(),
   port_handle(0)
 {}
+
+tNetworkConnection::tNetworkConnection(const std::string& uuid, core::tFrameworkElement::tHandle handle, bool destination_is_source) :
+  encoding(tDestinationEncoding::UUID_AND_HANDLE),
+  destination_is_source(destination_is_source),
+  uuid(uuid),
+  port_handle(handle)
+{}
+
+bool tNetworkConnection::operator==(const tNetworkConnection& other) const
+{
+  if (encoding != other.encoding)
+  {
+    return false;
+  }
+  switch (encoding)
+  {
+  case tDestinationEncoding::NONE:
+    return true;
+  case tDestinationEncoding::UUID_AND_HANDLE:
+    return uuid == other.uuid && port_handle == other.port_handle && destination_is_source == other.destination_is_source;
+  default:
+    FINROC_LOG_PRINT(ERROR, "Unsupported encoding");
+    return false;
+  }
+}
 
 rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnection& connection)
 {
@@ -80,7 +106,7 @@ rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputS
   case tDestinationEncoding::NONE:
     break;
   case tDestinationEncoding::UUID_AND_HANDLE:
-    stream << connection.uuid << connection.port_handle;
+    stream << connection.uuid << connection.port_handle << connection.destination_is_source;
     break;
   default:
     FINROC_LOG_PRINT(ERROR, "Unsupported encoding");
@@ -96,7 +122,7 @@ rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStr
   case tDestinationEncoding::NONE:
     break;
   case tDestinationEncoding::UUID_AND_HANDLE:
-    stream >> connection.uuid >> connection.port_handle;
+    stream >> connection.uuid >> connection.port_handle >> connection.destination_is_source;
     break;
   default:
     FINROC_LOG_PRINT(ERROR, "Unsupported encoding");

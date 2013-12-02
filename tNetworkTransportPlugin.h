@@ -95,6 +95,19 @@ public:
                               int remote_port_handle, const std::string remote_port_link) = 0;
 
   /*!
+   * Disconnect any connections from local port to port in remote runtime environment
+   * that were created using this transport plugin
+   *
+   * \param local_port Local port to disconnect
+   * \param remote_runtime_uuid UUID of remote runtime
+   * \param remote_port_handle Handle of remote port
+   * \param remote_port_link Link of port in remote runtime environment
+   * \return Returns error message if disconnecting failed. On success an empty string is returned.
+   */
+  virtual std::string Disconnect(core::tAbstractPort& local_port, const std::string& remote_runtime_uuid,
+                                 int remote_port_handle, const std::string remote_port_link) = 0;
+
+  /*!
    * \return Returns a list of all network transport plugins that have been registered for current finroc runtime environment
    */
   static const std::vector<tNetworkTransportPlugin*>& GetAll();

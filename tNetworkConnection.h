@@ -89,6 +89,10 @@ public:
 
   tNetworkConnection();
 
+  tNetworkConnection(const std::string& uuid, core::tFrameworkElement::tHandle handle, bool destination_is_source);
+
+  bool operator==(const tNetworkConnection& other) const;
+
 //----------------------------------------------------------------------
 // Private fields and methods
 //----------------------------------------------------------------------
@@ -100,6 +104,9 @@ private:
 
   /*! Encoding/Identification that is used for connected element in remote runtime environment */
   tDestinationEncoding encoding;
+
+  /*! True if encoded destination port is the source/output port of this network connection */
+  bool destination_is_source;
 
   /*! uuid of connected runtime environment - as string */
   std::string uuid;
