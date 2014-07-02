@@ -41,8 +41,8 @@
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
-#include "core/tPlugin.h"
 #include "core/port/tAbstractPort.h"
+#include "plugins/parameters/tConfigurablePlugin.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
@@ -70,7 +70,7 @@ namespace network_transport
  * One class in a Plugin must inherit from this interface.
  * It should be instantiated in a .cpp file.
  */
-class tNetworkTransportPlugin : public core::tPlugin
+class tNetworkTransportPlugin : public parameters::tConfigurablePlugin
 {
 
 //----------------------------------------------------------------------
