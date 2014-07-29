@@ -74,7 +74,8 @@ std::vector<tNetworkTransportPlugin*>& GetPluginList()
 }
 }
 
-tNetworkTransportPlugin::tNetworkTransportPlugin()
+tNetworkTransportPlugin::tNetworkTransportPlugin(const char* name) :
+  tConfigurablePlugin(name)
 {
   internal::GetPluginList().push_back(this);
 }

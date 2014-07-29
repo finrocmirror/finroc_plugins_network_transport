@@ -78,7 +78,10 @@ class tNetworkTransportPlugin : public parameters::tConfigurablePlugin
 //----------------------------------------------------------------------
 public:
 
-  tNetworkTransportPlugin();
+  /*!
+   * \param name Unique name of plugin. On Linux platforms, it should be identical with repository and .so file names (e.g. "tcp" for finroc_plugins_tcp and libfinroc_plugins_tcp.so).
+   */
+  tNetworkTransportPlugin(const char* name);
 
 
   /*!
@@ -111,11 +114,6 @@ public:
    * \return Returns a list of all network transport plugins that have been registered for current finroc runtime environment
    */
   static const std::vector<tNetworkTransportPlugin*>& GetAll();
-
-  /*!
-   * \return Unique identification of transport mechanism (typically, the plugin name should be used - e.g. "tcp")
-   */
-  virtual const char* GetId() = 0;
 
 //----------------------------------------------------------------------
 // Private fields and methods
