@@ -129,7 +129,8 @@ void tFrameworkElementInfo::Serialize(rrlib::serialization::tOutputStream& strea
     {
       bool unique = framework_element.GetFlag(tFlag::GLOBALLY_UNIQUE_LINK) || framework_element.GetParentWithFlags(tFlag::GLOBALLY_UNIQUE_LINK);
       core::tFrameworkElement* parent = framework_element.GetParent(i);
-      stream << framework_element.GetLink(i)->GetName() << unique << parent->GetHandle();
+      stream << framework_element.GetLink(i)->GetName() << unique;
+      stream.WriteInt(parent->GetHandle());
     }
   }
 
