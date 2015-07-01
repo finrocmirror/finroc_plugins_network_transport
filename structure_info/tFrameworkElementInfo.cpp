@@ -102,7 +102,7 @@ void tFrameworkElementInfo::Serialize(rrlib::serialization::tOutputStream& strea
 {
   if (structure_exchange_level == tStructureExchange::NONE)
   {
-    FINROC_LOG_PRINT(WARNING, "Specifying structure exchange level tStructureExchange::NONE does not write anything to stream. This is typically not intended.");
+    FINROC_LOG_PRINT_STATIC(WARNING, "Specifying structure exchange level tStructureExchange::NONE does not write anything to stream. This is typically not intended.");
     return;
   }
 
@@ -175,7 +175,7 @@ void tFrameworkElementInfo::SerializeConnections(rrlib::serialization::tOutputSt
     connections[connection_count] = &(*it);
     if (connection_count == 254)
     {
-      FINROC_LOG_PRINT(WARNING, "Port ", port, " has more than 254 connections. Serializing only 254. The rest will not be visible in finstruct.");
+      FINROC_LOG_PRINT_STATIC(WARNING, "Port ", port, " has more than 254 connections. Serializing only 254. The rest will not be visible in finstruct.");
       break;
     }
     connection_count++;

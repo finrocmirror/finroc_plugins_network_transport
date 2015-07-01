@@ -109,7 +109,7 @@ rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputS
     stream << connection.uuid << connection.port_handle << connection.destination_is_source;
     break;
   default:
-    FINROC_LOG_PRINT(ERROR, "Unsupported encoding");
+    FINROC_LOG_PRINT_STATIC(ERROR, "Unsupported encoding");
   }
   return stream;
 }
@@ -125,7 +125,7 @@ rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStr
     stream >> connection.uuid >> connection.port_handle >> connection.destination_is_source;
     break;
   default:
-    FINROC_LOG_PRINT(ERROR, "Unsupported encoding");
+    FINROC_LOG_PRINT_STATIC(ERROR, "Unsupported encoding");
   }
   return stream;
 }
