@@ -70,7 +70,7 @@ namespace network_transport
  * One class in a Plugin must inherit from this interface.
  * It should be instantiated in a .cpp file.
  */
-class tNetworkTransportPlugin : public parameters::tConfigurablePlugin
+class tNetworkTransportPlugin : public parameters::tConfigurablePlugin, public core::tUriConnector::tSchemeHandler
 {
 
 //----------------------------------------------------------------------
@@ -80,40 +80,40 @@ public:
 
   /*!
    * \param name Unique name of plugin. On Linux platforms, it should be identical with repository and .so file names (e.g. "tcp" for finroc_plugins_tcp and libfinroc_plugins_tcp.so).
+   * \param scheme_name Name of scheme that is handled by this handler
+   * \param parameter_definitions Parameters that connectors of this network transport have
    */
-  tNetworkTransportPlugin(const char* name);
-
-
-  /*!
-   * Connect local port to port in remote runtime environment using this
-   * network transport plugin.
-   *
-   * \param local_port Local port to connect
-   * \param remote_runtime_uuid UUID of remote runtime
-   * \param remote_port_handle Handle of remote port
-   * \param remote_port_link Link of port in remote runtime environment
-   * \return Returns error message if connecting failed. On success an empty string is returned.
-   */
-  virtual std::string Connect(core::tAbstractPort& local_port, const std::string& remote_runtime_uuid,
-                              int remote_port_handle, const std::string remote_port_link) = 0;
+  tNetworkTransportPlugin(const char* name, const char* scheme_name, const rrlib::rtti::tConstParameterDefinitionRange& parameter_definitions) :
+    tConfigurablePlugin(name),
+    tSchemeHandler(scheme_name, parameter_definitions)
+  {}
 
   /*!
-   * Disconnect any connections from local port to port in remote runtime environment
-   * that were created using this transport plugin
-   *
-   * \param local_port Local port to disconnect
-   * \param remote_runtime_uuid UUID of remote runtime
-   * \param remote_port_handle Handle of remote port
-   * \param remote_port_link Link of port in remote runtime environment
-   * \return Returns error message if disconnecting failed. On success an empty string is returned.
+   * \return Parent element for all network transports
    */
-  virtual std::string Disconnect(core::tAbstractPort& local_port, const std::string& remote_runtime_uuid,
-                                 int remote_port_handle, const std::string remote_port_link) = 0;
+//  static core::tFrameworkElement& GetNetworkTransportsParent();
 
-  /*!
-   * \return Returns a list of all network transport plugins that have been registered for current finroc runtime environment
-   */
-  static const std::vector<tNetworkTransportPlugin*>& GetAll();
+//  Transport-specific methods can be offered in specific plugins
+//  /*!
+//   * Connect local port to port in remote runtime environment using this
+//   * network transport plugin.
+//   *
+//   * \param local_port Local port to connect
+//   * \param remote_port_uri Uid of port in remote runtime environment
+//   * \param connect_options Options for connection
+//   * \return Returns error message if connecting failed. On success an empty string is returned.
+//   */
+//  virtual std::string Connect(core::tAbstractPort& local_port, const rrlib::uri::tURI& remote_port_uri, const core::tUriConnectOptions& connect_options) = 0;
+//
+//  /*!
+//   * Disconnect any connections from local port to port in remote runtime environment
+//   * that were created using this transport plugin
+//   *
+//   * \param local_port Local port to disconnect
+//   * \param remote_port_uri Uid of port in remote runtime environment
+//   * \return Returns error message if disconnecting failed. On success an empty string is returned.
+//   */
+//  virtual std::string Disconnect(core::tAbstractPort& local_port, const rrlib::uri::tURI& remote_port_uri) = 0;
 
 //----------------------------------------------------------------------
 // Private fields and methods

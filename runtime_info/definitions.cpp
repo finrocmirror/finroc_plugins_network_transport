@@ -19,23 +19,29 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/tNetworkConnection.cpp
+/*!\file    plugins/network_transport/runtime_info/definitions.cpp
  *
  * \author  Max Reichardt
  *
- * \date    2013-11-28
+ * \date    2017-02-26
  *
  */
 //----------------------------------------------------------------------
-#include "plugins/network_transport/tNetworkConnection.h"
+#include "plugins/network_transport/runtime_info/definitions.h"
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
+#include "rrlib/rtti/rtti.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
 //----------------------------------------------------------------------
+#include "plugins/network_transport/runtime_info/tRemoteType.h"
+#include "plugins/network_transport/runtime_info/tRemoteTypeConversion.h"
+#include "plugins/network_transport/runtime_info/tRemoteStaticCast.h"
+#include "plugins/network_transport/runtime_info/tRemoteUriSchemeHandler.h"
+#include "plugins/network_transport/runtime_info/tRemoteCreateAction.h"
 
 //----------------------------------------------------------------------
 // Debugging
@@ -53,6 +59,8 @@ namespace finroc
 {
 namespace network_transport
 {
+namespace runtime_info
+{
 
 //----------------------------------------------------------------------
 // Forward declarations / typedefs / enums
@@ -66,73 +74,25 @@ namespace network_transport
 // Implementation
 //----------------------------------------------------------------------
 
-tNetworkConnection::tNetworkConnection() :
-  encoding(tDestinationEncoding::NONE),
-  destination_is_source(false),
-  uuid(),
-  port_handle(0)
-{}
-
-tNetworkConnection::tNetworkConnection(const std::string& uuid, core::tFrameworkElement::tHandle handle, bool destination_is_source) :
-  encoding(tDestinationEncoding::UUID_AND_HANDLE),
-  destination_is_source(destination_is_source),
-  uuid(uuid),
-  port_handle(handle)
-{}
-
-bool tNetworkConnection::operator==(const tNetworkConnection& other) const
+namespace
 {
-  if (encoding != other.encoding)
-  {
-    return false;
-  }
-  switch (encoding)
-  {
-  case tDestinationEncoding::NONE:
-    return true;
-  case tDestinationEncoding::UUID_AND_HANDLE:
-    return uuid == other.uuid && port_handle == other.port_handle && destination_is_source == other.destination_is_source;
-  default:
-    FINROC_LOG_PRINT(ERROR, "Unsupported encoding");
-    return false;
-  }
-}
-
-rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnection& connection)
+/*! Sets up published registers */
+struct tSetup
 {
-  stream << connection.encoding;
-  switch (connection.encoding)
+  tSetup()
   {
-  case tDestinationEncoding::NONE:
-    break;
-  case tDestinationEncoding::UUID_AND_HANDLE:
-    stream << connection.uuid << connection.port_handle << connection.destination_is_source;
-    break;
-  default:
-    FINROC_LOG_PRINT_STATIC(ERROR, "Unsupported encoding");
+    rrlib::serialization::PublishedRegisters::Register<tRemoteType>(rrlib::rtti::tType::GetTypeRegister(), static_cast<int>(tRegisterUIDs::TYPE));
+    rrlib::serialization::PublishedRegisters::Register<tRemoteTypeConversion>(rrlib::rtti::conversion::tRegisteredConversionOperation::GetRegisteredOperations().operations, static_cast<int>(tRegisterUIDs::CONVERSION_OPERATION));
+    rrlib::serialization::PublishedRegisters::Register<tRemoteStaticCast>(rrlib::rtti::conversion::tRegisteredConversionOperation::GetRegisteredOperations().static_casts, static_cast<int>(tRegisterUIDs::STATIC_CAST));
+    rrlib::serialization::PublishedRegisters::Register<tRemoteUriSchemeHandler>(core::tUriConnector::GetSchemeHandlerRegister(), static_cast<int>(tRegisterUIDs::SCHEME_HANDLER));
+    rrlib::serialization::PublishedRegisters::Register<tRemoteCreateAction>(runtime_construction::tCreateFrameworkElementAction::GetConstructibleElements(), static_cast<int>(tRegisterUIDs::CREATE_ACTION));
   }
-  return stream;
+} setup;
 }
-
-rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnection& connection)
-{
-  stream >> connection.encoding;
-  switch (connection.encoding)
-  {
-  case tDestinationEncoding::NONE:
-    break;
-  case tDestinationEncoding::UUID_AND_HANDLE:
-    stream >> connection.uuid >> connection.port_handle >> connection.destination_is_source;
-    break;
-  default:
-    FINROC_LOG_PRINT_STATIC(ERROR, "Unsupported encoding");
-  }
-  return stream;
-}
-
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
+}
 }
 }

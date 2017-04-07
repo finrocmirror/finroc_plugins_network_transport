@@ -2,7 +2,7 @@
 // You received this file as part of Finroc
 // A framework for intelligent robot control
 //
-// Copyright (C) AG Robotersysteme TU Kaiserslautern
+// Copyright (C) Finroc GbR (finroc.org)
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,20 +19,19 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/structure_info/tRemoteRuntime.cpp
+/*!\file    plugins/network_transport/runtime_info/tUriConnectorInfo.cpp
  *
  * \author  Max Reichardt
  *
- * \date    2014-09-19
+ * \date    2017-03-11
  *
  */
 //----------------------------------------------------------------------
-#include "plugins/network_transport/structure_info/tRemoteRuntime.h"
+#include "plugins/network_transport/runtime_info/tUriConnectorInfo.h"
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
-#include "core/tFrameworkElementTags.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
@@ -54,7 +53,7 @@ namespace finroc
 {
 namespace network_transport
 {
-namespace structure_info
+namespace runtime_info
 {
 
 //----------------------------------------------------------------------
@@ -69,21 +68,36 @@ namespace structure_info
 // Implementation
 //----------------------------------------------------------------------
 
-tRemoteRuntime::tRemoteRuntime(const std::string& protocol, tFrameworkElement* parent, const tString& name, tFlags flags) :
-  core::tFrameworkElement(parent, name, flags)
+uint8_t tUriConnectorInfo::GetIndex(const core::tUriConnector& connector)
 {
-  core::tFrameworkElementTags::AddTag(*this, "remote_runtime: " + protocol);
+  auto& connectors = connector.Owner().UriConnectors();
+  for (auto it = connectors.begin(); it != connectors.end(); ++it)
+  {
+    if (it->get() == &connector)
+    {
+      return static_cast<uint8_t>(it - connectors.begin());
+    }
+  }
+  throw rrlib::util::tTraceableException<std::invalid_argument>("Connector is not in list of owner (programming error)");
 }
 
-void tRemoteRuntime::InitRemoteStructure(const rrlib::serialization::tFixedBuffer& current_structure_info)
+void tUriConnectorInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tUriConnector& connector)
 {
-  rrlib::serialization::tMemoryBuffer buffer;
-  rrlib::serialization::tOutputStream stream(buffer);
-  stream.Write(current_structure_info);
-  stream.Close();
-  structure_updates_port = data_ports::tOutputPort<rrlib::serialization::tMemoryBuffer>(this, "Structure", buffer);
-  structure_updates_port.Init();
+  stream << tID(connector);
+  tStaticInfo::Serialize(stream, connector.Flags(), connector.ConversionOperations(), connector.Uri(), connector.GetSchemeHandler());
+  stream << tDynamicInfo(connector);
 }
+
+void tUriConnectorInfo::tStaticInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tUriConnector::tFlags& flags, const rrlib::rtti::conversion::tConversionOperationSequence& conversion_operations, const rrlib::uri::tURI& uri, const core::tUriConnector::tSchemeHandler& scheme_handler)
+{
+  stream.WriteShort(flags.Raw() & 0xFFFF);
+  if (flags.Get(core::tConnectionFlag::CONVERSION))
+  {
+    stream << conversion_operations;
+  }
+  stream << uri << scheme_handler;
+}
+
 
 //----------------------------------------------------------------------
 // End of namespace declaration

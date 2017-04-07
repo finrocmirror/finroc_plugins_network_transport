@@ -19,31 +19,33 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/tNetworkTransportPlugin.cpp
+/*!\file    plugins/network_transport/runtime_info/tRemoteTypeConversion.h
  *
  * \author  Max Reichardt
  *
- * \date    2013-11-28
+ * \date    2017-02-27
+ *
+ * \brief   Contains tRemoteTypeConversion
+ *
+ * \b tRemoteTypeConversion
+ *
+ * Represents type conversion operation from rrlib_rtti_conversion in remote runtime.
+ *
+ * Remote type conversions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
  *
  */
 //----------------------------------------------------------------------
-#include "plugins/network_transport/tNetworkTransportPlugin.h"
+#ifndef __plugins__network_transport__runtime_info__tRemoteTypeConversion_h__
+#define __plugins__network_transport__runtime_info__tRemoteTypeConversion_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
+#include "rrlib/rtti_conversion/tRegisteredConversionOperation.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
-//----------------------------------------------------------------------
-
-//----------------------------------------------------------------------
-// Debugging
-//----------------------------------------------------------------------
-#include <cassert>
-
-//----------------------------------------------------------------------
-// Namespace usage
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -53,40 +55,66 @@ namespace finroc
 {
 namespace network_transport
 {
+namespace runtime_info
+{
 
 //----------------------------------------------------------------------
 // Forward declarations / typedefs / enums
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
-// Const values
+// Class declaration
 //----------------------------------------------------------------------
+//! Remote type conversion operation
+/*!
+ * Represents type conversion operation from rrlib_rtti_conversion in remote runtime.
+ *
+ * Remote type conversions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
+ */
+class tRemoteTypeConversion : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint16_t, rrlib::rtti::conversion::tRegisteredConversionOperation::tRegisteredOperations::tOperationsRegister>
+{
 
 //----------------------------------------------------------------------
-// Implementation
+// Public methods and typedefs
 //----------------------------------------------------------------------
-namespace internal
-{
-std::vector<tNetworkTransportPlugin*>& GetPluginList()
-{
-  static std::vector<tNetworkTransportPlugin*> plugin_list;
-  return plugin_list;
-}
-}
+public:
 
-tNetworkTransportPlugin::tNetworkTransportPlugin(const char* name) :
-  tConfigurablePlugin(name)
-{
-  internal::GetPluginList().push_back(this);
-}
+  void DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream)
+  {}
 
-const std::vector<tNetworkTransportPlugin*>& tNetworkTransportPlugin::GetAll()
-{
-  return internal::GetPluginList();
-}
+  static void SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const rrlib::rtti::conversion::tRegisteredConversionOperation* operation)
+  {
+    stream << operation->Name() << operation->SupportedSourceTypes().filter;
+    if (operation->SupportedSourceTypes().filter == rrlib::rtti::conversion::tSupportedTypeFilter::SINGLE)
+    {
+      stream << operation->SupportedSourceTypes().single_type;
+    }
+    stream << operation->SupportedDestinationTypes().filter;
+    if (operation->SupportedDestinationTypes().filter == rrlib::rtti::conversion::tSupportedTypeFilter::SINGLE)
+    {
+      stream << operation->SupportedDestinationTypes().single_type;
+    }
+    stream.WriteBoolean(operation->Parameter());
+    if (operation->Parameter())
+    {
+      stream << operation->Parameter();
+    }
+  }
+
+//----------------------------------------------------------------------
+// Private fields and methods
+//----------------------------------------------------------------------
+private:
+
+};
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
 }
 }
+}
+
+
+#endif

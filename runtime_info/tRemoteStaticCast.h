@@ -19,30 +19,31 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/tNetworkConnection.h
+/*!\file    plugins/network_transport/runtime_info/tRemoteStaticCast.h
  *
  * \author  Max Reichardt
  *
- * \date    2013-11-28
+ * \date    2017-02-27
  *
- * \brief   Contains tNetworkConnection
+ * \brief   Contains tRemoteStaticCast
  *
- * \b tNetworkConnection
+ * \b tRemoteStaticCast
  *
- * Single network connection.
- * Encodes destination so that finstruct can identify connected port
- * in another runtime environment.
+ * Represents static cast operation from rrlib_rtti_conversion in remote runtime.
+ *
+ * Remote type conversions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
  *
  */
 //----------------------------------------------------------------------
-#ifndef __plugins__network_transport__tNetworkConnection_h__
-#define __plugins__network_transport__tNetworkConnection_h__
+#ifndef __plugins__network_transport__runtime_info__tRemoteStaticCast_h__
+#define __plugins__network_transport__runtime_info__tRemoteStaticCast_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
-#include "rrlib/serialization/serialization.h"
-#include "core/tFrameworkElement.h"
+#include "rrlib/rtti_conversion/tRegisteredConversionOperation.h"
+#include "rrlib/rtti_conversion/tConversionOption.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
@@ -55,31 +56,24 @@ namespace finroc
 {
 namespace network_transport
 {
+namespace runtime_info
+{
 
 //----------------------------------------------------------------------
 // Forward declarations / typedefs / enums
 //----------------------------------------------------------------------
 
-/*!
- * Contains possible ways of encoding port connections to elements in
- * remote runtime environments
- */
-enum class tDestinationEncoding
-{
-  NONE,           //!< There is no destination encoded
-  UUID_AND_HANDLE //!< UUID of destination runtime environment and port handle
-};
-
 //----------------------------------------------------------------------
 // Class declaration
 //----------------------------------------------------------------------
-//! Single network connection
+//! Remote static cast
 /*!
- * Single network connection.
- * Encodes destination so that finstruct can identify connected port
- * in another runtime environment.
+ * Represents static cast operation from rrlib_rtti_conversion in remote runtime.
+ *
+ * Remote type conversions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
  */
-class tNetworkConnection
+class tRemoteStaticCast : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint16_t, rrlib::rtti::conversion::tRegisteredConversionOperation::tRegisteredOperations::tStaticCastRegister>
 {
 
 //----------------------------------------------------------------------
@@ -87,42 +81,27 @@ class tNetworkConnection
 //----------------------------------------------------------------------
 public:
 
-  tNetworkConnection();
+  void DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream)
+  {}
 
-  tNetworkConnection(const std::string& uuid, core::tFrameworkElement::tHandle handle, bool destination_is_source);
-
-  bool operator==(const tNetworkConnection& other) const;
+  static void SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const rrlib::rtti::conversion::tConversionOptionStaticCast* cast)
+  {
+    stream << cast->conversion_option.source_type;
+    stream << cast->conversion_option.destination_type;
+    stream.WriteBoolean(cast->implicit);
+  }
 
 //----------------------------------------------------------------------
 // Private fields and methods
 //----------------------------------------------------------------------
 private:
 
-  friend rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnection& connection);
-  friend rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnection& connection);
-
-
-  /*! Encoding/Identification that is used for connected element in remote runtime environment */
-  tDestinationEncoding encoding;
-
-  /*! True if encoded destination port is the source/output port of this network connection */
-  bool destination_is_source;
-
-  /*! uuid of connected runtime environment - as string */
-  std::string uuid;
-
-  /*! Handle of connected port */
-  core::tFrameworkElement::tHandle port_handle;
 };
-
-
-rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnection& connection);
-
-rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnection& connection);
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
+}
 }
 }
 

@@ -4,7 +4,19 @@
 
   <library>
     <sources>
-      **
+      *
+    </sources>
+  </library>
+
+  <library name="runtime_info">
+    <sources>
+      runtime_info/*
+    </sources>
+  </library>
+
+  <library name="generic_protocol">
+    <sources>
+      generic_protocol/*
     </sources>
   </library>
 

@@ -19,31 +19,33 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/tNetworkConnections.h
+/*!\file    plugins/network_transport/runtime_info/tRemoteCreateAction.h
  *
  * \author  Max Reichardt
  *
- * \date    2013-11-28
+ * \date    2017-02-27
  *
- * \brief   Contains tNetworkConnections
+ * \brief   Contains tRemoteCreateAction
  *
- * \b tNetworkConnections
+ * \b tRemoteCreateAction
  *
- * Annotation that manages and bundles all network connection that a port has.
+ * Represents tCreateFrameworkElementAction in remote runtime environment.
  *
+ * Remote create actions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
  */
 //----------------------------------------------------------------------
-#ifndef __plugins__network_transport__tNetworkConnections_h__
-#define __plugins__network_transport__tNetworkConnections_h__
+#ifndef __plugins__network_transport__runtime_info__tRemoteCreateAction_h__
+#define __plugins__network_transport__runtime_info__tRemoteCreateAction_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
+#include "plugins/runtime_construction/tCreateFrameworkElementAction.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
 //----------------------------------------------------------------------
-#include "plugins/network_transport/tNetworkConnection.h"
 
 //----------------------------------------------------------------------
 // Namespace declaration
@@ -51,6 +53,8 @@
 namespace finroc
 {
 namespace network_transport
+{
+namespace runtime_info
 {
 
 //----------------------------------------------------------------------
@@ -60,11 +64,14 @@ namespace network_transport
 //----------------------------------------------------------------------
 // Class declaration
 //----------------------------------------------------------------------
-//! Network connections of a port
+//! Remote create action
 /*!
- * Annotation that manages and bundles all network connection that a port has.
+ * Represents tCreateFrameworkElementAction in remote runtime environment.
+ *
+ * Remote create actions are currently only used in Java tools.
+ * Therefore, only serialization is implemented
  */
-class tNetworkConnections : public core::tAnnotation
+class tRemoteCreateAction : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint16_t, runtime_construction::tCreateFrameworkElementAction::tRegister>
 {
 
 //----------------------------------------------------------------------
@@ -72,50 +79,32 @@ class tNetworkConnections : public core::tAnnotation
 //----------------------------------------------------------------------
 public:
 
-  tNetworkConnections();
+  void DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream)
+  {}
 
-  /*!
-   * Adds specified connection if it is not in list yet
-   *
-   * \param connection Connection to add
-   */
-  void Add(const tNetworkConnection& connection);
-
-  /*!
-   * \return Number of network connections stored in this annotation
-   */
-  size_t Count()
+  static void SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const runtime_construction::tCreateFrameworkElementAction* create_action)
   {
-    return connections.size();
+    stream.WriteString(create_action->GetName());
+    stream.WriteString(create_action->GetModuleGroup().ToString());
+    stream.WriteBoolean(create_action->IsDeprecated());
+    stream.WriteBoolean(create_action->GetParameterTypes());
+    if (create_action->GetParameterTypes())
+    {
+      stream << *create_action->GetParameterTypes();
+    }
   }
-
-  /*!
-   * Removed specified connection if it is in list
-   *
-   * \param connection Connection to remove
-   */
-  void Remove(const tNetworkConnection& connection);
 
 //----------------------------------------------------------------------
 // Private fields and methods
 //----------------------------------------------------------------------
 private:
 
-  friend rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnections& connections);
-  friend rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnections& connections);
-
-  /** Network connections of port */
-  std::vector<tNetworkConnection> connections;
-
 };
-
-rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnections& connections);
-
-rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnections& connections);
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
+}
 }
 }
 

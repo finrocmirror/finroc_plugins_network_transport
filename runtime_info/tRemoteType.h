@@ -19,31 +19,32 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/tNetworkConnections.cpp
+/*!\file    plugins/network_transport/runtime_info/tRemoteType.h
  *
  * \author  Max Reichardt
  *
- * \date    2013-11-28
+ * \date    2017-02-26
+ *
+ * \brief   Contains tRemoteType
+ *
+ * \b tRemoteType
+ *
+ * Represents type in remote runtime environment.
+ * To be used with rrlib::serialization::PublishedRegisters (handles serialization etc.).
  *
  */
 //----------------------------------------------------------------------
-#include "plugins/network_transport/tNetworkConnections.h"
+#ifndef __plugins__network_transport__runtime_info__tRemoteType_h__
+#define __plugins__network_transport__runtime_info__tRemoteType_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
+#include "rrlib/serialization/PublishedRegisters.h"
+#include "rrlib/rtti/rtti.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
-//----------------------------------------------------------------------
-
-//----------------------------------------------------------------------
-// Debugging
-//----------------------------------------------------------------------
-#include <cassert>
-
-//----------------------------------------------------------------------
-// Namespace usage
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -53,74 +54,83 @@ namespace finroc
 {
 namespace network_transport
 {
+namespace runtime_info
+{
 
 //----------------------------------------------------------------------
 // Forward declarations / typedefs / enums
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
-// Const values
+// Class declaration
 //----------------------------------------------------------------------
-
-//----------------------------------------------------------------------
-// Implementation
-//----------------------------------------------------------------------
-
-//----------------------------------------------------------------------
-// tNetworkConnections constructors
-//----------------------------------------------------------------------
-tNetworkConnections::tNetworkConnections() :
-  connections()
-{}
-
-void tNetworkConnections::Add(const tNetworkConnection& connection)
+//! Remote rrlib_rtti data type
+/*!
+ * Represents type in remote runtime environment.
+ * To be used with rrlib::serialization::PublishedRegisters (handles serialization etc.).
+ */
+class tRemoteType : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint16_t, rrlib::rtti::detail::tTypeInfo::tSharedInfo::tRegisteredTypes>
 {
-  for (size_t i = 0; i < connections.size(); i++)
-  {
-    if (connections[i] == connection)
-    {
-      return;
-    }
-  }
-  connections.push_back(connection);
-}
 
-void tNetworkConnections::Remove(const tNetworkConnection& connection)
-{
-  for (size_t i = 0; i < connections.size(); i++)
-  {
-    if (connections[i] == connection)
-    {
-      connections.erase(connections.begin() + i);
-      i--;
-    }
-  }
-}
+//----------------------------------------------------------------------
+// Public methods and typedefs
+//----------------------------------------------------------------------
+public:
 
-rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tNetworkConnections& connections)
-{
-  stream.WriteInt(static_cast<uint>(connections.connections.size()));
-  for (size_t i = 0; i < connections.connections.size(); i++)
-  {
-    stream << connections.connections[i];
-  }
-  return stream;
-}
+  tRemoteType() : type_traits(0), types_checked(0), underlying_type(0)
+  {}
 
-rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tNetworkConnections& connections)
-{
-  connections.connections.clear();
-  int count = stream.ReadInt();
-  for (int i = 0; i < count; i++)
+  void DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream);
+
+  static void SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const rrlib::rtti::tType& type);
+
+  /*!
+   * \return Local data type that is equivalent to this type. Empty type if there is no equivalent local type.
+   */
+  rrlib::rtti::tType GetLocalDataType() const;
+
+  /*!
+   * \return Name of remote type
+   */
+  const std::string& GetName() const
   {
-    connections.connections.emplace_back();
-    stream >> connections.connections.back();
+    return name;
   }
-  return stream;
-}
+
+  /*!
+   * \return Bit vector of type traits determined at compile time (see rrlib::rtti::tType::GetTypeTraits())
+   */
+  inline uint32_t GetTypeTraits() const
+  {
+    return type_traits;
+  }
+
+//----------------------------------------------------------------------
+// Private fields and methods
+//----------------------------------------------------------------------
+private:
+
+  /*! Type traits of remote type */
+  uint32_t type_traits;
+
+  /*! Local data type that represents the same type; null-type if there is no such type in local runtime environment */
+  mutable rrlib::rtti::tType local_data_type;
+
+  /*! Number of local types checked to resolve type */
+  mutable uint types_checked;
+
+  /*! Name of remote type */
+  std::string name;
+
+  /*! Uid of underlying type */
+  uint16_t underlying_type;
+};
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
 }
 }
+}
+
+#endif

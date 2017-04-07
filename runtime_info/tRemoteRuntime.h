@@ -19,7 +19,7 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/structure_info/tRemoteRuntime.h
+/*!\file    plugins/network_transport/runtime_info/tRemoteRuntime.h
  *
  * \author  Max Reichardt
  *
@@ -35,8 +35,8 @@
  *
  */
 //----------------------------------------------------------------------
-#ifndef __plugins__network_transport__structure_info__tRemoteRuntime_h__
-#define __plugins__network_transport__structure_info__tRemoteRuntime_h__
+#ifndef __plugins__network_transport__runtime_info__tRemoteRuntime_h__
+#define __plugins__network_transport__runtime_info__tRemoteRuntime_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
@@ -54,7 +54,7 @@ namespace finroc
 {
 namespace network_transport
 {
-namespace structure_info
+namespace runtime_info
 {
 
 //----------------------------------------------------------------------
@@ -95,9 +95,9 @@ public:
   /*!
    * Creates structure update port - which will initially serve the structure passed to this function.
    *
-   * \param current_structure_info Structure information that will be served initially
+   * \param current_runtime_info Structure information that will be served initially
    */
-  void InitRemoteStructure(const rrlib::serialization::tFixedBuffer& current_structure_info);
+  void InitRemoteStructure(const rrlib::serialization::tFixedBuffer& current_runtime_info);
 
 //----------------------------------------------------------------------
 // Private fields and methods

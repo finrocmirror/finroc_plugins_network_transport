@@ -19,27 +19,23 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 //----------------------------------------------------------------------
-/*!\file    plugins/network_transport/structure_info/tChangeablePortInfo.h
+/*!\file    plugins/network_transport/runtime_info/definitions.h
  *
  * \author  Max Reichardt
  *
- * \date    2013-01-21
+ * \date    2017-02-26
  *
- * \brief   Contains tChangeablePortInfo
- *
- * \b tChangeablePortInfo
- *
- * Information about ports that may change during application runtime
- * (e.g. push/pull strategy, network update times)
+ * Definitions regarding serialization and representation of runtime elements for remote runtime environments.
  *
  */
 //----------------------------------------------------------------------
-#ifndef __plugins__network_transport__structure_info__tChangeablePortInfo_h__
-#define __plugins__network_transport__structure_info__tChangeablePortInfo_h__
+#ifndef __plugins__network_transport__runtime_info__definitions_h__
+#define __plugins__network_transport__runtime_info__definitions_h__
 
 //----------------------------------------------------------------------
 // External includes (system with <>, local with "")
 //----------------------------------------------------------------------
+#include "rrlib/serialization/serialization.h"
 
 //----------------------------------------------------------------------
 // Internal includes with ""
@@ -52,56 +48,64 @@ namespace finroc
 {
 namespace network_transport
 {
+namespace runtime_info
+{
 
 //----------------------------------------------------------------------
 // Forward declarations / typedefs / enums
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
-// Class declaration
+// Function declarations
 //----------------------------------------------------------------------
-//! Inconstant port information
+
 /*!
- * Information about ports that may change during application runtime
- * (e.g. push/pull strategy, network update times)
+ * Register UIDs for data exchange
  */
-struct tChangeablePortInfo
+enum class tRegisterUIDs
 {
-  /*! Framework element Flags (only first 8 bit are serialized in case of non-ports) */
-  core::tFrameworkElement::tFlags flags;
-
-  /*! Strategy to use for this port - if it is destination port */
-  int16_t strategy;
-
-  /*! Minimum network update interval */
-  int16_t min_net_update_time;
-
-
-  tChangeablePortInfo() :
-    flags(),
-    strategy(0),
-    min_net_update_time(-1)
-  {}
+  TYPE,
+  STATIC_CAST,
+  CONVERSION_OPERATION,
+  SCHEME_HANDLER,
+  CREATE_ACTION
 };
 
-inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tChangeablePortInfo& info)
+/*!
+ * Enum on different levels of structure (framework elements and ports) exchanged among peers
+ */
+enum class tStructureExchange : int
 {
-  stream << info.flags.Raw() << info.strategy << info.min_net_update_time;
-  return stream;
-}
+  NONE,               //<! No info on structure is sent
+  SHARED_PORTS,       //<! Send info on shared ports to connection partner
+  COMPLETE_STRUCTURE, //<! Send info on complete structure to connection partner (e.g. for fingui)
+  FINSTRUCT,          //<! Send info on complete structure including port connections to partner (as required by finstruct)
+};
 
-inline rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tChangeablePortInfo& info)
+/*!
+ * Defines custom flags used in tSerializationInfo
+ */
+enum tSerializationInfoFlags
 {
-  uint32_t flags;
-  stream >> flags;
-  info.flags = core::tFrameworkElement::tFlags(flags);
-  stream >> info.strategy >> info.min_net_update_time;
-  return stream;
+  cSTRUCTURE_EXCHANGE_FLAG_1 = 0x1,  //!< First four flags are used to encode tStructureExchange (two bits in reserve for future extensions)
+  cSTRUCTURE_EXCHANGE_FLAG_N = 0x8,
+  cJAVA_CLIENT               = 0x10, //!< Connected to Java Client?
+  cDEBUG_PROTOCOL            = 0x20  //!< Write debug info to protocol?
+};
+
+/*!
+ * \param stream Output stream
+ * \return Structure exchange level that target of stream requests
+ */
+inline tStructureExchange GetStructureExchangeLevel(const rrlib::serialization::tOutputStream& stream)
+{
+  return static_cast<tStructureExchange>(stream.GetTargetInfo().custom_info & 0xF);
 }
 
 //----------------------------------------------------------------------
 // End of namespace declaration
 //----------------------------------------------------------------------
+}
 }
 }
 
