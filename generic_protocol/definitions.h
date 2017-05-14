@@ -61,7 +61,7 @@ namespace generic_protocol
 
 /*! Protocol version */
 enum { cPROTOCOL_VERSION_MAJOR = 1 };      // Major protocol version: Relevant for communication compatibility among peers
-enum { cPROTOCOL_VERSION_MINOR = 170331 }; // Minor protocol version: Relevant for optional communication features among peers (may break compatibility with outdated tooling). Identical to release version number encoded in serialization info (YYMMDD).
+enum { cPROTOCOL_VERSION_MINOR = 1703 };   // Minor protocol version: Relevant for optional communication features among peers (may break compatibility with outdated tooling). Identical to release version number encoded in serialization info (YYMM).
 
 /*!
  * Flags relevant for some messages (used to be tDataEncoding): Encoding of data and handles
