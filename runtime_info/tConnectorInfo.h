@@ -86,15 +86,11 @@ struct tConnectorInfo
 
   struct tStaticInfo
   {
-    /*! Flags set for this connector */
-    core::tConnectionFlags flags;
-
-    /*! Conversion operations for this connector */
-    rrlib::rtti::conversion::tConversionOperationSequence conversion_operations;
+    /*! Flags and conversion operations for this connector */
+    core::tConnectOptions flags_and_conversion_operations;
 
     tStaticInfo(const core::tConnector& connector) :
-      flags(connector.Flags()),
-      conversion_operations(connector.ConversionOperations())
+      flags_and_conversion_operations({ connector.ConversionOperations(), connector.Flags() })
     {}
 
   } static_info;
@@ -104,6 +100,9 @@ struct tConnectorInfo
     id(connector),
     static_info(connector)
   {}
+
+  friend inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tID& info);
+  friend inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tStaticInfo& info);
 
   /*!
    * Serializes info on single connector to stream so that it can later
@@ -115,12 +114,7 @@ struct tConnectorInfo
   static void Serialize(rrlib::serialization::tOutputStream& stream, const core::tConnector& connector)
   {
     stream << tID(connector);
-    auto& flags = connector.Flags();
-    stream.WriteShort(flags.Raw() & 0xFFFF);
-    if (flags.Get(core::tConnectionFlag::CONVERSION))
-    {
-      stream << connector.ConversionOperations();
-    }
+    stream << tStaticInfo(connector);
   }
 };
 
@@ -132,11 +126,7 @@ inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::t
 
 inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tConnectorInfo::tStaticInfo& info)
 {
-  stream.WriteShort(info.flags.Raw() & 0xFFFF);
-  if (info.flags.Get(core::tConnectionFlag::CONVERSION))
-  {
-    stream << info.conversion_operations;
-  }
+  stream << info.flags_and_conversion_operations;
   return stream;
 }
 

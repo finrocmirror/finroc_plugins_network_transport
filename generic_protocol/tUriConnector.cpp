@@ -86,6 +86,7 @@ tUriConnector::tUriConnector(core::tAbstractPort& owner_port, const rrlib::uri::
 }),
 local_runtime_info(*plugin.LocalRuntimeInfo())
 {
+  this->flags |= core::tConnectionFlag::NAMED_PARAMETERS;
   assert(plugin.LocalRuntimeInfo());
   this->owner_port = &owner_port;
   uri_connector_address = this;

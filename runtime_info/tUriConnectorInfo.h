@@ -73,7 +73,7 @@ struct tUriConnectorInfo
     /*! Handle of owner */
     core::tFrameworkElement::tHandle owner_handle = 0;
 
-    /*! Index of URI connector */
+    /*! Index of URI connector in owner list */
     uint8_t index = 0;
 
     tID(const core::tUriConnector& connector) :
@@ -85,11 +85,8 @@ struct tUriConnectorInfo
 
   struct tStaticInfo
   {
-    /*! Flags set for this connector */
-    core::tUriConnector::tFlags flags;
-
-    /*! Conversion operations for this connector */
-    rrlib::rtti::conversion::tConversionOperationSequence conversion_operations;
+    /*! Flags and conversion operations for this connector */
+    core::tConnectOptions flags_and_conversion_operations;
 
     /*! URI of partner port (preferably normalized) */
     rrlib::uri::tURI uri;
@@ -98,13 +95,12 @@ struct tUriConnectorInfo
     const core::tUriConnector::tSchemeHandler* scheme_handler = nullptr;
 
     tStaticInfo(const core::tUriConnector& connector) :
-      flags(connector.Flags()),
-      conversion_operations(connector.ConversionOperations()),
-      uri(connector.Uri()),
-      scheme_handler(&connector.GetSchemeHandler())
+      flags_and_conversion_operations({ connector.ConversionOperations(), connector.Flags() }),
+                                    uri(connector.Uri()),
+                                    scheme_handler(&connector.GetSchemeHandler())
     {}
 
-    static void Serialize(rrlib::serialization::tOutputStream& stream, const core::tUriConnector::tFlags& flags, const rrlib::rtti::conversion::tConversionOperationSequence& conversion_operations,
+    static void Serialize(rrlib::serialization::tOutputStream& stream, const core::tConnectOptions& flags_and_conversion_operations,
                           const rrlib::uri::tURI& uri, const core::tUriConnector::tSchemeHandler& scheme_handler);
 
   } static_info;
@@ -152,7 +148,7 @@ inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::t
 
 inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tUriConnectorInfo::tStaticInfo& info)
 {
-  tUriConnectorInfo::tStaticInfo::Serialize(stream, info.flags, info.conversion_operations, info.uri, *info.scheme_handler);
+  tUriConnectorInfo::tStaticInfo::Serialize(stream, info.flags_and_conversion_operations, info.uri, *info.scheme_handler);
   return stream;
 }
 

@@ -84,17 +84,14 @@ uint8_t tUriConnectorInfo::GetIndex(const core::tUriConnector& connector)
 void tUriConnectorInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tUriConnector& connector)
 {
   stream << tID(connector);
-  tStaticInfo::Serialize(stream, connector.Flags(), connector.ConversionOperations(), connector.Uri(), connector.GetSchemeHandler());
+  core::tConnectOptions options = { connector.ConversionOperations(), connector.Flags() };
+  tStaticInfo::Serialize(stream, options, connector.Uri(), connector.GetSchemeHandler());
   stream << tDynamicInfo(connector);
 }
 
-void tUriConnectorInfo::tStaticInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tUriConnector::tFlags& flags, const rrlib::rtti::conversion::tConversionOperationSequence& conversion_operations, const rrlib::uri::tURI& uri, const core::tUriConnector::tSchemeHandler& scheme_handler)
+void tUriConnectorInfo::tStaticInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tConnectOptions& flags_and_conversion_operations, const rrlib::uri::tURI& uri, const core::tUriConnector::tSchemeHandler& scheme_handler)
 {
-  stream.WriteShort(flags.Raw() & 0xFFFF);
-  if (flags.Get(core::tConnectionFlag::CONVERSION))
-  {
-    stream << conversion_operations;
-  }
+  flags_and_conversion_operations.Serialize(stream, false);
   stream << uri << scheme_handler;
 }
 
