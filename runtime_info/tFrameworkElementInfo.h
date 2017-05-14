@@ -48,7 +48,9 @@
 // Internal includes with ""
 //----------------------------------------------------------------------
 #include "plugins/network_transport/runtime_info/definitions.h"
+#include "plugins/network_transport/runtime_info/tConnectorInfo.h"
 #include "plugins/network_transport/runtime_info/tRemoteType.h"
+#include "plugins/network_transport/runtime_info/tUriConnectorInfo.h"
 
 //----------------------------------------------------------------------
 // Namespace declaration
@@ -231,11 +233,12 @@ struct tFrameworkElementInfo
    *
    * \param stream Binary stream to serialize to
    * \param framework_element Framework element to serialize info of
+   * \param serialize_owned_connectors Whether to serialize connectors owned by framework element
    *
    * TODO: avoid frequent reallocation of (typically one) tPath
    */
   template < bool ENABLE = !Tremote >
-  static void Serialize(typename std::enable_if<ENABLE, rrlib::serialization::tOutputStream>::type& stream, const core::tFrameworkElement& framework_element)
+  static void Serialize(typename std::enable_if<ENABLE, rrlib::serialization::tOutputStream>::type& stream, const core::tFrameworkElement& framework_element, bool serialize_owned_connectors = false)
   {
     rrlib::uri::tURI uri;
 
@@ -267,6 +270,29 @@ struct tFrameworkElementInfo
     if (IsDataPort(framework_element))
     {
       stream << tDynamicInfo(framework_element);
+    }
+
+    enum tNextConnector { NONE, PLAIN, URI };
+
+    if (serialize_owned_connectors && framework_element.IsPort())
+    {
+      const core::tAbstractPort& port = static_cast<const core::tAbstractPort&>(framework_element);
+      for (auto it = port.OutgoingConnectionsBegin(); it != port.OutgoingConnectionsEnd(); ++it)
+      {
+        runtime_info::tConnectorInfo info(*it);
+        stream.WriteByte(static_cast<uint8_t>(PLAIN));
+        stream << it->Destination().GetHandle() << info.static_info;
+      }
+      for (auto & connector : port.UriConnectors())
+      {
+        if (connector)
+        {
+          tUriConnectorInfo info(*connector);
+          stream.WriteByte(static_cast<uint8_t>(URI));
+          stream << info.id.index << info.static_info << info.dynamic_info;
+        }
+      }
+      stream.WriteByte(static_cast<uint8_t>(NONE));
     }
   }
 
