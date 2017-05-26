@@ -71,6 +71,9 @@ struct tServerSideConversionInfo
   /*! Parameters on server-side data conversion */
   std::string operation_1, operation_2, operation_1_parameter, operation_2_parameter, intermediate_type, destination_type;
 
+  /*! Data encoding to use */
+  rrlib::serialization::tDataEncoding encoding = rrlib::serialization::tDataEncoding::BINARY;
+
   bool NoConversion() const
   {
     return operation_1.length() == 0 && operation_2.length() == 0 && operation_1_parameter.length() == 0 && operation_2_parameter.length() == 0 && intermediate_type.length() == 0 && destination_type.length() == 0;
@@ -81,7 +84,8 @@ struct tServerSideConversionInfo
 inline bool operator==(const tServerSideConversionInfo& lhs, const tServerSideConversionInfo& rhs)
 {
   return lhs.operation_1 == rhs.operation_1 && lhs.operation_2 == rhs.operation_2 && lhs.operation_1_parameter == rhs.operation_1_parameter &&
-         lhs.operation_2_parameter == rhs.operation_2_parameter && lhs.intermediate_type == rhs.intermediate_type && lhs.destination_type == rhs.destination_type;
+         lhs.operation_2_parameter == rhs.operation_2_parameter && lhs.intermediate_type == rhs.intermediate_type && lhs.destination_type == rhs.destination_type &&
+         lhs.encoding == rhs.encoding;
 }
 
 inline bool operator!=(const tServerSideConversionInfo& lhs, const tServerSideConversionInfo& rhs)
@@ -91,13 +95,13 @@ inline bool operator!=(const tServerSideConversionInfo& lhs, const tServerSideCo
 
 inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tServerSideConversionInfo& info)
 {
-  stream << info.operation_1 << info.operation_1_parameter << info.operation_2 << info.operation_2_parameter << info.intermediate_type << info.destination_type;
+  stream << info.destination_type << info.operation_1 << info.operation_1_parameter << info.operation_2 << info.operation_2_parameter << info.intermediate_type << info.encoding;
   return stream;
 }
 
 inline rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tServerSideConversionInfo& info)
 {
-  stream >> info.operation_1 >> info.operation_1_parameter >> info.operation_2 >> info.operation_2_parameter >> info.intermediate_type >> info.destination_type;
+  stream >> info.destination_type >> info.operation_1 >> info.operation_1_parameter >> info.operation_2 >> info.operation_2_parameter >> info.intermediate_type >> info.encoding;
   return stream;
 }
 

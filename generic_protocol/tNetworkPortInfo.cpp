@@ -78,7 +78,7 @@ tNetworkPortInfo::tNetworkPortInfo(tRemoteRuntime& remote_runtime, tHandle conne
   values_to_send(),
   deleted(false),
   last_update(rrlib::time::cNO_TIME),
-  desired_encoding(message_flags::tDataEncoding::cBINARY_ENCODING),
+  desired_encoding(rrlib::serialization::tDataEncoding::BINARY),
   served_port_handle(served_port_handle)
 {
   port.AddAnnotation(*this);

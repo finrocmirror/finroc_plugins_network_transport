@@ -177,13 +177,23 @@ public:
    * \param buffer Buffer to serialize
    * \param encoding Desired data encoding
    */
-  inline void SerializeBuffer(rrlib::serialization::tOutputStream& stream, data_ports::tPortDataPointer<const rrlib::rtti::tGenericObject>& buffer, message_flags::tDataEncoding encoding)
+  inline void SerializeBuffer(rrlib::serialization::tOutputStream& stream, data_ports::tPortDataPointer<const rrlib::rtti::tGenericObject>& buffer, rrlib::serialization::tDataEncoding encoding)
   {
-    buffer->Serialize(stream, static_cast<rrlib::serialization::tDataEncoding>(encoding));
+    buffer->Serialize(stream, encoding);
+  }
+
+  /*!
+   * Sets desired network encoding of network partner
+   */
+  void SetDesiredEncoding(rrlib::serialization::tDataEncoding desired_encoding)
+  {
+    this->desired_encoding = desired_encoding;
   }
 
   /*!
    * Sets subscription data of server ports to specified values
+   *
+   * \param data Dynamic connection data
    */
   void SetServerSideDynamicConnectionData(const tDynamicConnectionData& data);
 
@@ -199,7 +209,7 @@ public:
     {
       bool express_data = current_dynamic_connection_data.high_priority;
       bool legacy = stream.GetTargetInfo().revision == 0;
-      uint8_t message_flags = desired_encoding | ((!legacy) && client_info ? message_flags::cTO_SERVER : 0);
+      uint8_t message_flags = static_cast<uint8_t>(desired_encoding) | ((!legacy) && client_info ? message_flags::cTO_SERVER : 0);
       int handle = stream.GetTargetInfo().revision == 0 ? remote_port_handle : connection_handle;
       if (express_data && values_to_send.Size() == 0)
       {
@@ -274,7 +284,7 @@ private:
   rrlib::time::tTimestamp last_update;
 
   /*! Desired encoding of network partner */
-  message_flags::tDataEncoding desired_encoding;
+  rrlib::serialization::tDataEncoding desired_encoding;
 
   /*! In case this is a server port: Local handle of served port - otherwise 0 */
   const tHandle served_port_handle;

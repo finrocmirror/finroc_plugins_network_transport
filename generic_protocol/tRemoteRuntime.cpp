@@ -663,6 +663,7 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
 
           data_ports::tGenericPort created_port(rrlib::uri::tURI(port->GetPath()).ToString(), &GetServerPortsElement(), &GetServerPortsElement(), port_to_connect_to->GetDataType(), flags);
           tNetworkPortInfo* network_port_info = new tNetworkPortInfo(*this, message.Get<0>(), message.Get<0>(), dynamic_connection_data.strategy, *created_port.GetWrapped(), port->GetHandle());
+          network_port_info->SetDesiredEncoding(static_subscription_parameters.server_side_conversion.encoding);
           network_port_info->SetServerSideDynamicConnectionData(dynamic_connection_data);
           created_port.AddPortListenerForPointer(*network_port_info);
           created_port.SetPullRequestHandler(this);
