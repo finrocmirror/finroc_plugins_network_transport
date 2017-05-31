@@ -942,6 +942,11 @@ void tRemoteRuntime::SendCallImplementation(tCallPointer& call_to_send, const rr
 
 void tRemoteRuntime::SendPendingMessages(const rrlib::time::tTimestamp& time_now)
 {
+  if ((!GetPrimaryConnection()) || GetPrimaryConnection()->IsClosed())
+  {
+    return;
+  }
+
   for (auto it = not_ready_calls.begin(); it < not_ready_calls.end();)
   {
     if ((*it)->ReadyForSending())
@@ -980,7 +985,7 @@ void tRemoteRuntime::SendPendingMessages(const rrlib::time::tTimestamp& time_now
 
   for (auto & connection : connections)
   {
-    if (connection)
+    if (connection && (!connection->IsClosed()))
     {
       connection->SendPendingMessages(time_now);
     }

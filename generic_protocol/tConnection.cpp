@@ -220,6 +220,7 @@ void tConnection::SendPendingMessages(const rrlib::time::tTimestamp& time_now)
   {
     non_acknowledged_bulk_packets += 0x8000;
   }
+  assert(GetRemoteRuntime());
   bool more_bulk_packets_allowed = non_acknowledged_bulk_packets < static_cast<int>(GetRemoteRuntime()->NetworkTransport().par_max_not_acknowledged_packets_bulk.Get());
 
   if (non_acknowledged_express_packets >= cMAX_NOT_ACKNOWLEDGED_PACKETS)

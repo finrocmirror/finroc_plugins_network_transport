@@ -228,8 +228,9 @@ struct tFrameworkElementInfo
   }
 
   /*!
-   * Serializes info on single framework element to stream so that it can later
+   * Serializes info one single framework element to stream so that it can later
    * be deserialized in typically another runtime environment.
+   * Note that its handle is also serialized.
    *
    * \param stream Binary stream to serialize to
    * \param framework_element Framework element to serialize info of
@@ -238,7 +239,7 @@ struct tFrameworkElementInfo
    * TODO: avoid frequent reallocation of (typically one) tPath
    */
   template < bool ENABLE = !Tremote >
-  static void Serialize(typename std::enable_if<ENABLE, rrlib::serialization::tOutputStream>::type& stream, const core::tFrameworkElement& framework_element, bool serialize_owned_connectors = false)
+  static void Serialize(typename std::enable_if<ENABLE, rrlib::serialization::tOutputStream>::type& stream, const core::tFrameworkElement& framework_element, bool serialize_owned_connectors)
   {
     rrlib::uri::tURI uri;
 
