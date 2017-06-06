@@ -71,7 +71,7 @@ namespace runtime_info
  * Remote create actions are currently only used in Java tools.
  * Therefore, only serialization is implemented
  */
-class tRemoteCreateAction : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint16_t, runtime_construction::tCreateFrameworkElementAction::tRegister>
+class tRemoteCreateAction : public rrlib::serialization::PublishedRegisters::tRemoteEntryBase<uint32_t, runtime_construction::tCreateFrameworkElementAction::tRegister>
 {
 
 //----------------------------------------------------------------------
