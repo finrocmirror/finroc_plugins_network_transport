@@ -200,8 +200,8 @@ void tNetworkTransportPlugin::CreateConnection(tNetworkConnector& connector, tRe
     if (connector.LocalConversionOperations().Size())
     {
       connector.temporary_conversion_port.reset(new data_ports::tGenericPort(remote_runtime.client_ports, rrlib::uri::tURI(connector.StaticParameters().server_port_id.path).ToString(), connector.OwnerPort().GetDataType(), tFlag::ACCEPTS_DATA | tFlag::PUSH_STRATEGY | tFlag::EMITS_DATA | (created_port.GetWrapped()->IsOutputPort() ? tFlag::OUTPUT_PORT : tFlag::PORT)), core::tPortWrapperBase::tDeleter());
+      connector.temporary_conversion_port->ConnectTo(connector.OwnerPort(), core::tConnectionFlag::NON_PRIMARY_CONNECTOR); // Do this first so that initial pushing works (does not send default first) for remote input ports
       connector.temporary_conversion_port->ConnectTo(connector.temporary_connector_port->GetPort(), core::tConnectOptions(connector.LocalConversionOperations(), core::tConnectionFlag::NON_PRIMARY_CONNECTOR));
-      connector.temporary_conversion_port->ConnectTo(connector.OwnerPort(), core::tConnectionFlag::NON_PRIMARY_CONNECTOR);
     }
     else
     {

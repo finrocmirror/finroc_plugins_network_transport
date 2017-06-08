@@ -76,20 +76,16 @@ struct tStaticConnectorParameters
   /*! ID of server port */
   TServerPortId server_port_id;
 
-  /*! Whether to subscribe at input port for reverse pushing */
-  bool reverse_push;
 
   tStaticConnectorParameters() :
-    server_port_id(TServerPortId()),
-    reverse_push(false)
+    server_port_id(TServerPortId())
   {}
 
   /*! Copy constructor replacing server port id */
   template <typename TOtherId>
   tStaticConnectorParameters(const tStaticConnectorParameters<TOtherId>& other, const TServerPortId& this_id) :
     server_side_conversion(other.server_side_conversion),
-    server_port_id(this_id),
-    reverse_push(other.reverse_push)
+    server_port_id(this_id)
   {}
 
 };
@@ -98,7 +94,7 @@ struct tStaticConnectorParameters
 template <typename TServerPortId>
 inline bool operator==(const tStaticConnectorParameters<TServerPortId>& lhs, const tStaticConnectorParameters<TServerPortId>& rhs)
 {
-  return lhs.server_port_id == rhs.server_port_id && lhs.reverse_push == rhs.reverse_push && lhs.server_side_conversion == rhs.server_side_conversion;
+  return lhs.server_port_id == rhs.server_port_id && lhs.server_side_conversion == rhs.server_side_conversion;
 }
 
 template <typename TServerPortId>
@@ -110,14 +106,14 @@ inline bool operator!=(const tStaticConnectorParameters<TServerPortId>& lhs, con
 template <typename TServerPortId>
 inline rrlib::serialization::tOutputStream& operator << (rrlib::serialization::tOutputStream& stream, const tStaticConnectorParameters<TServerPortId>& data)
 {
-  stream << data.server_port_id << data.reverse_push << data.server_side_conversion;
+  stream << data.server_port_id << data.server_side_conversion;
   return stream;
 }
 
 template <typename TServerPortId>
 inline rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStream& stream, tStaticConnectorParameters<TServerPortId>& data)
 {
-  stream >> data.server_port_id >> data.reverse_push >> data.server_side_conversion;
+  stream >> data.server_port_id >> data.server_side_conversion;
   return stream;
 }
 

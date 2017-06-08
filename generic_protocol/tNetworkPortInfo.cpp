@@ -65,6 +65,7 @@ namespace generic_protocol
 //----------------------------------------------------------------------
 // Const values
 //----------------------------------------------------------------------
+__thread tNetworkPortInfo* tNetworkPortInfo::current_publishing_network_port = nullptr;
 
 //----------------------------------------------------------------------
 // Implementation
@@ -91,11 +92,7 @@ void tNetworkPortInfo::ChangeStrategy(int16_t new_strategy)
   core::tAbstractPort* port = this->GetAnnotated<core::tAbstractPort>();
   if (data_ports::IsDataFlowType(port->GetDataType()))
   {
-    if (port->IsOutputPort())
-    {
-      values_to_send.SetMaxLength(port->GetFlag(core::tFrameworkElement::tFlag::PUSH_STRATEGY_REVERSE) ? 1 : 0);
-    }
-    else
+    if (!port->IsOutputPort())
     {
       values_to_send.SetMaxLength(strategy < 0 ? 0 : strategy);
     }

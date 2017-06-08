@@ -121,7 +121,7 @@ void tNetworkPortInfoClient::CheckSubscription()
   else if (!connected)
   {
     tStaticNetworkConnectorParameters static_parameters(used_by_connectors[0]->StaticParameters(), NetworkPortInfo().remote_port_handle);
-    tConnectPortsMessage::Serialize(false, true, stream, port->GetHandle());
+    tConnectPortsMessage::Serialize(false, true, stream, port->GetHandle(), port->IsInputPort());
     stream << static_parameters << new_connection_data;
     tConnectPortsMessage::FinishMessage(stream);
     connected = true;

@@ -163,7 +163,7 @@ public:
   void OnPortChange(data_ports::tPortDataPointer<const rrlib::rtti::tGenericObject>& value, data_ports::tChangeContext& change_context)
   {
     //FINROC_LOG_PRINT(DEBUG, "Port Changed ", port.GetWrapped()->GetQualifiedName(), " ", rrlib::serialization::Serialize(*value));
-    if (strategy > 0)
+    if (strategy > 0 && (!(current_publishing_network_port && current_publishing_network_port->connection_handle == -connection_handle && (&current_publishing_network_port->remote_runtime == &remote_runtime))))
     {
       remote_runtime.GetLocalRuntimeInfo().OnPortChange(value, this, change_context);
     }
@@ -291,6 +291,9 @@ private:
 
   /*! Contains client info if this is a client port */
   std::unique_ptr<tNetworkPortInfoClient> client_info;
+
+  /*! Network port that currently publishes data using the current thread (null if current thread does not publish data from the net) */
+  static __thread tNetworkPortInfo* current_publishing_network_port;
 
 
   virtual void OnManagedDelete() override;

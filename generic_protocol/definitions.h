@@ -210,8 +210,8 @@ typedef tMessage < tOpCode, tOpCode::SMALL_PORT_VALUE_CHANGE_WITHOUT_TIMESTAMP, 
         uint8_t > tSmallPortValueChangeWithoutTimestamp;
 
 
-// Parameters: [connection handle == client port handle] after message: [static connector parameters][dynamic connection data]
-typedef tMessage <tOpCode, tOpCode::CONNECT_PORTS, tMessageSize::VARIABLE_UP_TO_4GB, tFrameworkElementHandle> tConnectPortsMessage;
+// Parameters: [connection handle == client port handle][connect direction: connection for publishing data to server?] after message: [static connector parameters][dynamic connection data]
+typedef tMessage <tOpCode, tOpCode::CONNECT_PORTS, tMessageSize::VARIABLE_UP_TO_4GB, tFrameworkElementHandle, bool> tConnectPortsMessage;
 
 // Parameters: [connection handle == client port handle] after message: [string: error message]
 typedef tMessage <tOpCode, tOpCode::CONNECT_PORTS_ERROR, tMessageSize::VARIABLE_UP_TO_4GB, tFrameworkElementHandle> tConnectPortsErrorMessage;

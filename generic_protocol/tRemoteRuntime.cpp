@@ -301,6 +301,7 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
     std::pair<core::tAbstractPort*, tNetworkPortInfo*> port = GetNetworkConnectorPort(server_port_map, message.Get<0>(), flags & message_flags::cTO_SERVER);
     if (port.first && port.first->IsReady() && data_ports::IsDataFlowType(port.first->GetDataType()))
     {
+      tNetworkPortInfo::current_publishing_network_port = port.second;
       data_ports::tGenericPort generic_port = data_ports::tGenericPort::Wrap(*port.first);
 
       bool another_value = false;
@@ -345,6 +346,7 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
       }
       while (another_value);
 
+      tNetworkPortInfo::current_publishing_network_port = nullptr;
       message.FinishDeserialize(stream);
       connection.received_data_after_last_connect = true;
     }
@@ -541,6 +543,9 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
         rrlib::thread::tLock lock(GetStructureMutex(), false);
         if (lock.TryLock())
         {
+          bool publish_connection = message.Get<1>();
+          bool tool_connection = GetDesiredStructureInfo() != runtime_info::tStructureExchange::SHARED_PORTS;
+
           // Read subscription data
           tStaticNetworkConnectorParameters static_subscription_parameters;
           tDynamicConnectionData dynamic_connection_data;
@@ -555,15 +560,19 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
           }
 
           tFlags flags = tFlag::NETWORK_ELEMENT | tFlag::VOLATILE;
-          if (port->IsOutputPort())
+          if ((!tool_connection) && port->IsOutputPort() && publish_connection)
+          {
+            throw std::runtime_error("Cannot publish to output ports with basic (SHARED_PORTS) connection");
+          }
+          if (!publish_connection)
           {
             flags |= tFlag::ACCEPTS_DATA; // create input port
           }
           else
           {
-            flags |= tFlag::OUTPUT_PORT | tFlag::EMITS_DATA; // create output io port
+            flags |= tFlag::OUTPUT_PORT | tFlag::EMITS_DATA | tFlag::NO_INITIAL_PUSHING; // create output io port
           }
-          if (GetDesiredStructureInfo() != runtime_info::tStructureExchange::SHARED_PORTS)
+          if (tool_connection)
           {
             flags |= tFlag::TOOL_PORT;
           }
@@ -571,18 +580,15 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
           {
             flags |= tFlag::PUSH_STRATEGY;
           }
-          if (static_subscription_parameters.reverse_push)
-          {
-            flags |= tFlag::PUSH_STRATEGY_REVERSE;
-          }
 
+          std::string port_name = rrlib::uri::tURI(port->GetPath()).ToString() + (publish_connection ? " (Publish)" : " (Subscribe)");
           core::tAbstractPort* port_to_connect_to = port;
           if (!static_subscription_parameters.server_side_conversion.NoConversion())
           {
             port_to_connect_to = nullptr;
 
             // Check whether port already exists
-            if (port->IsOutputPort())
+            if (!publish_connection)
             {
               for (auto it = port->OutgoingConnectionsBegin(); it != port->OutgoingConnectionsEnd(); ++it)
               {
@@ -646,8 +652,8 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
               }
 
               // Create and connect new conversion port
-              data_ports::tGenericPort created_port(rrlib::uri::tURI(port->GetPath()).ToString(), &GetServerPortsElement(), destination_type, tFlag::NETWORK_ELEMENT | tFlag::VOLATILE | tFlag::EMITS_DATA | tFlag::ACCEPTS_DATA | (port->IsOutputPort() ? tFlag::OUTPUT_PORT : tFlag::PORT));
-              if (created_port.ConnectTo(port, core::tConnectOptions(conversion, core::tConnectionFlag::NON_PRIMARY_CONNECTOR)))
+              data_ports::tGenericPort created_port(port_name + " to " + destination_type.GetName(), &GetServerPortsElement(), destination_type, tFlag::NETWORK_ELEMENT | tFlag::VOLATILE | tFlag::EMITS_DATA | tFlag::ACCEPTS_DATA | (publish_connection ? (tFlag::OUTPUT_PORT | tFlag::NO_INITIAL_PUSHING) : tFlag::PORT) | (tool_connection ? tFlag::TOOL_PORT : tFlag::PORT));
+              if (created_port.ConnectTo(port, core::tConnectOptions(conversion, core::tConnectionFlag::NON_PRIMARY_CONNECTOR | (publish_connection ? core::tConnectionFlag::DIRECTION_TO_DESTINATION : core::tConnectionFlag::DIRECTION_TO_SOURCE))))
               {
                 created_port.GetWrapped()->EmplaceAnnotation<tServerSideConversionAnnotation>(static_subscription_parameters.server_side_conversion);
                 created_port.Init();
@@ -661,14 +667,14 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
             }
           }
 
-          data_ports::tGenericPort created_port(rrlib::uri::tURI(port->GetPath()).ToString(), &GetServerPortsElement(), &GetServerPortsElement(), port_to_connect_to->GetDataType(), flags);
+          data_ports::tGenericPort created_port(port_name, &GetServerPortsElement(), &GetServerPortsElement(), port_to_connect_to->GetDataType(), flags);
           tNetworkPortInfo* network_port_info = new tNetworkPortInfo(*this, message.Get<0>(), message.Get<0>(), dynamic_connection_data.strategy, *created_port.GetWrapped(), port->GetHandle());
           network_port_info->SetDesiredEncoding(static_subscription_parameters.server_side_conversion.encoding);
           network_port_info->SetServerSideDynamicConnectionData(dynamic_connection_data);
           created_port.AddPortListenerForPointer(*network_port_info);
           created_port.SetPullRequestHandler(this);
           created_port.Init();
-          created_port.ConnectTo(*port_to_connect_to, core::tConnectionFlag::NON_PRIMARY_CONNECTOR);
+          created_port.ConnectTo(*port_to_connect_to, core::tConnectionFlag::NON_PRIMARY_CONNECTOR | (publish_connection ? core::tConnectionFlag::DIRECTION_TO_DESTINATION : core::tConnectionFlag::DIRECTION_TO_SOURCE));
           server_port_map.emplace(message.Get<0>(), network_port_info);
           FINROC_LOG_PRINT(DEBUG_VERBOSE_1, "Created server port ", created_port.GetWrapped());
         }
@@ -783,7 +789,6 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
         {
           data_ports::common::tAbstractDataPort& data_port = static_cast<data_ports::common::tAbstractDataPort&>(*client_port->GetPort());
           data_port.SetPushStrategy(dynamic_info.strategy > 0);
-          //data_port.SetReversePushStrategy(dynamic_info.flags.Get(tFlag::PUSH_STRATEGY_REVERSE));
           //data_port.SetMinNetUpdateIntervalRaw(dynamic_info.min_net_update_time);
           //tNetworkPortInfo* network_port_info = data_port.GetAnnotation<tNetworkPortInfo>();
           client_port->NetworkPortInfo().current_dynamic_connection_data.strategy = dynamic_info.strategy;

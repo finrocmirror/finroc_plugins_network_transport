@@ -71,7 +71,6 @@ struct tDynamicConnectionData : public tDynamicConnectorParameters
   /*! Strategy to use (-1 no subscription, 0 pull subscription, 1+ push subscription with specified queue length) */
   uint16_t strategy = -1;
 
-  /*! bool  */
 };
 
 inline bool operator==(const tDynamicConnectionData& lhs, const tDynamicConnectionData& rhs)
