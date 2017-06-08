@@ -121,7 +121,11 @@ public:
   virtual void WriteToStream(rrlib::serialization::tOutputStream& stream) const override
   {
     tStructureCreatedMessage::Serialize(false, true, stream, local_handle);
-    stream << info.static_info << info.dynamic_info;
+    stream << info.static_info;
+    if (info.static_info.IsDataPort())
+    {
+      stream << info.dynamic_info;
+    }
     tStructureCreatedMessage::FinishMessage(stream);
   }
 };
