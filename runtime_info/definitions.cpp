@@ -81,7 +81,7 @@ struct tSetup
 {
   tSetup()
   {
-    rrlib::serialization::PublishedRegisters::Register<tRemoteType>(rrlib::rtti::tType::GetTypeRegister(), static_cast<int>(tRegisterUIDs::TYPE));
+    rrlib::serialization::PublishedRegisters::Register<tRemoteType, true>(rrlib::rtti::tType::GetTypeRegister(), static_cast<int>(tRegisterUIDs::TYPE));
     rrlib::serialization::PublishedRegisters::Register<tRemoteTypeConversion>(rrlib::rtti::conversion::tRegisteredConversionOperation::GetRegisteredOperations().operations, static_cast<int>(tRegisterUIDs::CONVERSION_OPERATION));
     rrlib::serialization::PublishedRegisters::Register<tRemoteStaticCast>(rrlib::rtti::conversion::tRegisteredConversionOperation::GetRegisteredOperations().static_casts, static_cast<int>(tRegisterUIDs::STATIC_CAST));
     rrlib::serialization::PublishedRegisters::Register<tRemoteUriSchemeHandler>(core::tUriConnector::GetSchemeHandlerRegister(), static_cast<int>(tRegisterUIDs::SCHEME_HANDLER));
