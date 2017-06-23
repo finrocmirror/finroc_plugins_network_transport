@@ -173,7 +173,7 @@ typedef tMessage<tOpCode, tOpCode::UNSUBSCRIBE_LEGACY, tMessageSize::FIXED, tFra
 // Parameters: [int32: acknowledged message batch]
 //typedef tMessage<tOpCode::ACK, tMessageSize::FIXED, int32_t> tAckMessage;
 
-// Parameters: [connection handle == client port handle (legacy: remote port handle)][call uid][desired encoding]
+// Parameters: [connection handle == client port handle (legacy: remote port handle)][call uid][desired encoding/flags]
 typedef tMessage<tOpCode, tOpCode::PULLCALL, tMessageSize::FIXED, tFrameworkElementHandle, tCallId, uint8_t> tPullCall;
 
 // Parameters: [call uid][failed?] after message: [type][timestamp][serialized data]
@@ -199,13 +199,13 @@ typedef tMessage<tOpCode, tOpCode::STRUCTURE_DELETED, tMessageSize::FIXED, tFram
 typedef tMessage<tOpCode, tOpCode::PEER_INFO, tMessageSize::VARIABLE_UP_TO_4GB> tPeerInfoMessage;
 
 
-// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding] after message: [binary blob or null-terminated string depending on type encoding]
+// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding/flags] after message: [binary blob or null-terminated string depending on type encoding]
 typedef tMessage <tOpCode, tOpCode::PORT_VALUE_CHANGE, tMessageSize::VARIABLE_UP_TO_4GB, int32_t, uint8_t> tPortValueChange;
 
-// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding] after message: [binary blob or null-terminated string depending on type encoding]
+// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding/flags] after message: [binary blob or null-terminated string depending on type encoding]
 typedef tMessage <tOpCode, tOpCode::SMALL_PORT_VALUE_CHANGE, tMessageSize::VARIABLE_UP_TO_255_BYTE, int32_t, uint8_t> tSmallPortValueChange;
 
-// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding] after message: [binary blob or null-terminated string depending on type encoding]
+// Parameters: [connection handle == client port handle (legacy: remote port handle)][encoding/flags] after message: [binary blob or null-terminated string depending on type encoding]
 typedef tMessage < tOpCode, tOpCode::SMALL_PORT_VALUE_CHANGE_WITHOUT_TIMESTAMP, tMessageSize::VARIABLE_UP_TO_255_BYTE, int32_t,
         uint8_t > tSmallPortValueChangeWithoutTimestamp;
 
