@@ -90,7 +90,7 @@ local_runtime_info(*plugin.LocalRuntimeInfo())
   assert(plugin.LocalRuntimeInfo());
   this->owner_port = &owner_port;
   uri_connector_address = this;
-  static_parameters.server_port_id.path = parsed_uri.path;
+  static_parameters.server_port_id.path = parsed_uri.path.MakeRelative();
   static_parameters.server_port_id.authority = parsed_uri.authority;
 
   SetParametersInConstructor(connect_options);

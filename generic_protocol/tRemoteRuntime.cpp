@@ -776,6 +776,10 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
     {
       tStructureChangedMessage message;
       message.Deserialize(stream, false);
+      if (stream.GetSourceInfo().revision == 0)
+      {
+        stream.ReadInt(); // new flags (flag changes are obsolete)
+      }
       runtime_info::tRemoteFrameworkElementInfo::tDynamicInfo dynamic_info;
       stream >> dynamic_info;
       message.FinishDeserialize(stream);
@@ -902,7 +906,7 @@ void tRemoteRuntime::ProcessStructurePacket(rrlib::serialization::tInputStream& 
 
 void tRemoteRuntime::PublishStructureChange(const tLocalRuntimeInfo::tStructureChangeEventToPublish& structure_change_event)
 {
-  if (shared_connection_info->initial_reading_complete && shared_connection_info->initial_writing_complete)
+  if (shared_connection_info->initial_reading_complete && shared_connection_info->initial_writing_complete && shared_connection_info->output_stream_prototype.GetTargetInfo().revision != 0) // do not publish to legacy runtimes
   {
     if (shared_connection_info->initial_structure_writing_complete || structure_change_event.local_handle < shared_connection_info->framework_elements_in_full_structure_exchange_sent_until_handle)
     {

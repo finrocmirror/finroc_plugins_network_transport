@@ -154,7 +154,15 @@ rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStr
 
   for (int i = 0; i < info.static_info.link_count; i++)
   {
-    stream >> info.static_info.link_data[i].path;
+    if (stream.GetSourceInfo().revision == 0)
+    {
+      info.static_info.link_data[i].path = rrlib::uri::tPath(stream.ReadString());
+      stream.ReadBoolean(); // unique link? (obsolete)
+    }
+    else
+    {
+      stream >> info.static_info.link_data[i].path;
+    }
   }
 
   // We only receive (shared) ports
@@ -163,10 +171,6 @@ rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStr
   if ((info.static_info.type->GetTypeTraits() & rrlib::rtti::trait_flags::cIS_DATA_TYPE) || stream.GetSourceInfo().revision == 0)
   {
     stream >> info.dynamic_info;
-  }
-  if (stream.GetSourceInfo().revision == 0)
-  {
-    stream.ReadShort();  // legacy network update time
   }
 
   return stream;

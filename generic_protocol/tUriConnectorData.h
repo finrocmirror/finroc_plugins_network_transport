@@ -76,7 +76,7 @@ public:
 
   struct tRemotePortUriComponents
   {
-    /*! Absolute path of server port to connect to */
+    /*! Normalized path of server port to connect to (no preceding slash) */
     rrlib::uri::tPath path;
 
     /*! Authority part of URI (server to connect to - may be empty) */

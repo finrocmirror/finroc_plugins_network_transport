@@ -327,7 +327,6 @@ inline rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tI
 {
   if (stream.GetSourceInfo().revision == 0)
   {
-    stream.ReadInt();
     stream >> info.strategy;
     stream.ReadShort();
   }

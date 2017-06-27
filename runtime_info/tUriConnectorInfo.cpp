@@ -63,6 +63,7 @@ namespace runtime_info
 //----------------------------------------------------------------------
 // Const values
 //----------------------------------------------------------------------
+static const std::map<std::string, std::string> cNO_PARAMETERS;
 
 //----------------------------------------------------------------------
 // Implementation
@@ -92,6 +93,10 @@ void tUriConnectorInfo::Serialize(rrlib::serialization::tOutputStream& stream, c
 void tUriConnectorInfo::tStaticInfo::Serialize(rrlib::serialization::tOutputStream& stream, const core::tConnectOptions& flags_and_conversion_operations, const rrlib::uri::tURI& uri, const core::tUriConnector::tSchemeHandler& scheme_handler)
 {
   flags_and_conversion_operations.Serialize(stream, false);
+  if (flags_and_conversion_operations.flags.Get(core::tConnectionFlag::NAMED_PARAMETERS))
+  {
+    stream << cNO_PARAMETERS;  // Parameters are (currently) not automatically sent to finstruct (-> no auto-update overhead etc.)
+  }
   stream << uri << scheme_handler;
 }
 
