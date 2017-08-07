@@ -132,6 +132,8 @@ public:
     return shared_connection_info->local_runtime_info;
   }
 
+  std::string GetLogDescription() const;
+
   /*!
    * \return Pointer to remote runtime environment that this connection is attached to
    */

@@ -118,6 +118,16 @@ void tConnection::Close()
 
 }
 
+std::string tConnection::GetLogDescription() const
+{
+  if (shared_connection_info->remote_runtime)
+  {
+    tRemoteRuntime& runtime = *(shared_connection_info->remote_runtime);
+    return std::string(runtime.GetPrimaryConnection().get() == this ? "Primary" : "Express") + " connection to " + runtime.GetName();
+  }
+  return "Connection to unknown runtime";
+}
+
 size_t tConnection::ProcessIncomingMessageBatch(const rrlib::serialization::tFixedBuffer& buffer, size_t start_at)
 {
   try
@@ -139,6 +149,18 @@ size_t tConnection::ProcessIncomingMessageBatch(const rrlib::serialization::tFix
       int16_t acknowledgement = stream.ReadShort();
       if (acknowledgement >= 0)
       {
+        // check if acknowledgment is valid
+        int non_acknowledged_express_packets = static_cast<int>(next_packet_index - 1) - acknowledgement;
+        if (non_acknowledged_express_packets < 0)
+        {
+          non_acknowledged_express_packets += 0x8000;
+        }
+        if (non_acknowledged_express_packets < 0 || non_acknowledged_express_packets > cMAX_NOT_ACKNOWLEDGED_PACKETS)
+        {
+          FINROC_LOG_PRINT(WARNING, "Received invalid packet acknowledgment. Skipping.");
+          return 0;
+        }
+
         last_acknowledged_packet = acknowledgement;
       }
     }
@@ -374,7 +396,6 @@ tConnection::tSharedConnectionInfo::tSharedConnectionInfo(tLocalRuntimeInfo& loc
   initial_structure_writing_complete(false),
   framework_elements_in_full_structure_exchange_sent_until_handle(0)
 {}
-
 
 //----------------------------------------------------------------------
 // End of namespace declaration
