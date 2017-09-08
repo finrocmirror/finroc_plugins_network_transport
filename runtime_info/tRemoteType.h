@@ -77,7 +77,7 @@ class tRemoteType : public rrlib::serialization::PublishedRegisters::tRemoteEntr
 //----------------------------------------------------------------------
 public:
 
-  tRemoteType() : type_traits(0), types_checked(0), underlying_type(0)
+  tRemoteType() : type_traits(0), types_checked(0), underlying_type(0), element_type(0), array_size(0), type_register(nullptr)
   {}
 
   void DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream);
@@ -92,10 +92,7 @@ public:
   /*!
    * \return Name of remote type
    */
-  const std::string& GetName() const
-  {
-    return name;
-  }
+  const std::string& GetName() const;
 
   /*!
    * \return Bit vector of type traits determined at compile time (see rrlib::rtti::tType::GetTypeTraits())
@@ -120,10 +117,19 @@ private:
   mutable uint types_checked;
 
   /*! Name of remote type */
-  std::string name;
+  mutable std::string name;
 
   /*! Uid of underlying type */
   uint16_t underlying_type;
+
+  /*! Uid of element type */
+  uint16_t element_type;
+
+  /*! Array size if this is a remote array */
+  uint32_t array_size;
+
+  /*! Reference to remote register that this type belongs to */
+  const rrlib::serialization::PublishedRegisters::tRemoteRegister<tRemoteType>* type_register;
 };
 
 //----------------------------------------------------------------------

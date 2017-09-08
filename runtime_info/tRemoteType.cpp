@@ -69,9 +69,15 @@ namespace runtime_info
 // Implementation
 //----------------------------------------------------------------------
 
+namespace
+{
+rrlib::thread::tMutex mutables_mutex;
+}
+
 void tRemoteType::DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream)
 {
   const bool legacy_procotol = stream.GetSourceInfo().revision == 0;
+  type_register = rrlib::serialization::PublishedRegisters::GetRemoteRegister<tRemoteType>(stream);
 
   if (legacy_procotol)
   {
@@ -98,17 +104,21 @@ void tRemoteType::DeserializeRegisterEntry(rrlib::serialization::tInputStream& s
   else
   {
     type_traits = stream.ReadShort() << 8;
-    if (type_traits & rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY)
+    if (type_traits & (rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY | rrlib::rtti::trait_flags::cIS_ARRAY))
     {
-      auto& reg = *rrlib::serialization::PublishedRegisters::GetRemoteRegister<tRemoteType>(stream);
-      const tRemoteType& last_type = (reg)[reg.Size() - 1];
-      name = "List<" + last_type.name + ">";
-      underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? (last_type.underlying_type + 1) : 0;
+      element_type = stream.ReadShort();
+      underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? stream.ReadShort() : 0;
+      array_size = (type_traits & rrlib::rtti::trait_flags::cIS_ARRAY) ? stream.ReadInt() : 0;
+      types_checked = 0;
+      local_data_type = rrlib::rtti::tType();
+      name = std::string();
     }
     else
     {
       name = stream.ReadString();
       underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? stream.ReadShort() : 0;
+      element_type = 0;
+      array_size = 1;
       if (type_traits & rrlib::rtti::trait_flags::cIS_ENUM)
       {
         // Discard enum info
@@ -123,9 +133,9 @@ void tRemoteType::DeserializeRegisterEntry(rrlib::serialization::tInputStream& s
           }
         }
       }
+      types_checked = rrlib::rtti::tType::GetTypeCount();
+      local_data_type = rrlib::rtti::tType::FindType(name);
     }
-    types_checked = rrlib::rtti::tType::GetTypeCount();
-    local_data_type = rrlib::rtti::tType::FindType(name);
   }
 }
 
@@ -135,13 +145,40 @@ rrlib::rtti::tType tRemoteType::GetLocalDataType() const
   {
     return local_data_type;
   }
-  if (types_checked < rrlib::rtti::tType::GetTypeCount())
+  rrlib::thread::tLock lock(mutables_mutex);
+  if (local_data_type)
+  {
+    return local_data_type;
+  }
+  if (name.length() == 0)
+  {
+    GetName();
+  }
+  if (name.length() && types_checked < rrlib::rtti::tType::GetTypeCount())
   {
     types_checked = rrlib::rtti::tType::GetTypeCount();
-    local_data_type = rrlib::rtti::tType::FindType(name);
+    local_data_type = rrlib::rtti::tType::FindType(GetName());
   }
   return local_data_type;
 }
+
+const std::string& tRemoteType::GetName() const
+{
+  rrlib::thread::tLock lock(mutables_mutex);
+  if (name.length() == 0)
+  {
+    if (type_traits & rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY)
+    {
+      name = "List<" + (*type_register)[element_type].GetName() + ">";
+    }
+    else if (type_traits & rrlib::rtti::trait_flags::cIS_ARRAY)
+    {
+      name = "Array<" + (*type_register)[element_type].GetName() + ", " + std::to_string(array_size) + ">";
+    }
+  }
+  return name;
+}
+
 
 void tRemoteType::SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const rrlib::rtti::tType& type)
 {
@@ -158,8 +195,17 @@ void tRemoteType::SerializeRegisterEntry(rrlib::serialization::tOutputStream& st
   else
   {
     stream.WriteShort(static_cast<uint16_t>((type.GetTypeTraits() >> 8) & 0xFFFF));
-    if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY)
+    if (type.GetTypeTraits() & (rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY | rrlib::rtti::trait_flags::cIS_ARRAY))
     {
+      stream.WriteShort(type.GetElementType().GetHandle());
+      if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE)
+      {
+        stream.WriteShort(type.GetUnderlyingType().GetHandle());
+      }
+      if (type.IsArray())
+      {
+        stream.WriteInt(type.GetArraySize());
+      }
       return;
     }
     stream.WriteString(type.GetPlainTypeName());
