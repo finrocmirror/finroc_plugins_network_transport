@@ -85,6 +85,22 @@ public:
   static void SerializeRegisterEntry(rrlib::serialization::tOutputStream& stream, const rrlib::rtti::tType& type);
 
   /*!
+   * \return Array size of remote type
+   */
+  inline size_t GetArraySize() const
+  {
+    return array_size;
+  }
+
+  /*!
+   * \return Element type
+   */
+  inline const tRemoteType& GetElementType() const
+  {
+    return (*type_register)[element_type];
+  }
+
+  /*!
    * \return Local data type that is equivalent to this type. Empty type if there is no equivalent local type.
    */
   rrlib::rtti::tType GetLocalDataType() const;
@@ -93,6 +109,31 @@ public:
    * \return Name of remote type
    */
   const std::string& GetName() const;
+
+  /*!
+   * \return Number of tuple elements if this a pair ot tuple type
+   */
+  inline uint GetTupleElementCount() const
+  {
+    return tuple_elements.size();
+  }
+
+  /*!
+   * \param Tuple element index (must be smaller than GetTupleElementCount())
+   * \return Tuple element type
+   */
+  inline const tRemoteType& GetTupleElementType(uint index) const
+  {
+    return (*type_register)[tuple_elements[index]];
+  }
+
+  /*!
+   * \return Classication of this type
+   */
+  rrlib::rtti::tTypeClassification GetTypeClassification() const
+  {
+    return static_cast<rrlib::rtti::tTypeClassification>(type_traits & rrlib::rtti::trait_flags::cTYPE_CLASSIFICATION_BITS);
+  }
 
   /*!
    * \return Bit vector of type traits determined at compile time (see rrlib::rtti::tType::GetTypeTraits())
@@ -127,6 +168,9 @@ private:
 
   /*! Array size if this is a remote array */
   uint32_t array_size;
+
+  /*! Tuple elements if this is a pair or tuple type */
+  std::vector<uint16_t> tuple_elements;
 
   /*! Reference to remote register that this type belongs to */
   const rrlib::serialization::PublishedRegisters::tRemoteRegister<tRemoteType>* type_register;

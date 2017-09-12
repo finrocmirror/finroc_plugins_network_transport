@@ -71,11 +71,72 @@ namespace runtime_info
 
 namespace
 {
+
+// Type name generation copied/adapter from rrlib/rtti/tType.cpp
+
+template <typename T>
+inline void StreamChars(std::ostream& stream, const T chars)
+{
+  stream << chars;
+}
+
+template <typename TStream>
+void StreamType(TStream& stream, const tRemoteType& type)
+{
+  switch (type.GetTypeClassification())
+  {
+  case rrlib::rtti::tTypeClassification::RPC_TYPE:
+  case rrlib::rtti::tTypeClassification::OTHER_DATA_TYPE:
+  case rrlib::rtti::tTypeClassification::INTEGRAL:
+  case rrlib::rtti::tTypeClassification::NULL_TYPE:
+    StreamChars(stream, type.GetName());
+    break;
+  case rrlib::rtti::tTypeClassification::ARRAY:
+    StreamChars(stream, "Array<");
+    StreamType(stream, type.GetElementType());
+    StreamChars(stream, ", ");
+    char buffer[100];
+    sprintf(buffer, "%d", type.GetArraySize());
+    StreamChars(stream, buffer);
+    StreamChars(stream, '>');
+    break;
+  case rrlib::rtti::tTypeClassification::LIST:
+    StreamChars(stream, "List<");
+    StreamType(stream, type.GetElementType());
+    StreamChars(stream, '>');
+    break;
+  case rrlib::rtti::tTypeClassification::ENUM_BASED_FLAGS:
+    StreamChars(stream, "EnumFlags<");
+    StreamType(stream, type.GetElementType());
+    StreamChars(stream, '>');
+    break;
+  case rrlib::rtti::tTypeClassification::PAIR:
+    StreamChars(stream, "Pair<");
+    StreamType(stream, type.GetTupleElementType(0));
+    StreamChars(stream, ", ");
+    StreamType(stream, type.GetTupleElementType(1));
+    StreamChars(stream, '>');
+    break;
+  default:
+    break;
+  case rrlib::rtti::tTypeClassification::TUPLE:
+    size_t tuple_size = type.GetTupleElementCount();
+    StreamChars(stream, "Tuple<");
+    for (size_t i = 0; i < tuple_size; i++)
+    {
+      StreamType(stream, type.GetTupleElementType(i));
+      StreamChars(stream, i == tuple_size - 1 ? ">" : ", ");
+    }
+    break;
+  }
+}
+
 rrlib::thread::tMutex mutables_mutex;
 }
 
 void tRemoteType::DeserializeRegisterEntry(rrlib::serialization::tInputStream& stream)
 {
+  *this = tRemoteType(); // Reset this object
   const bool legacy_procotol = stream.GetSourceInfo().revision == 0;
   type_register = rrlib::serialization::PublishedRegisters::GetRemoteRegister<tRemoteType>(stream);
 
@@ -104,37 +165,42 @@ void tRemoteType::DeserializeRegisterEntry(rrlib::serialization::tInputStream& s
   else
   {
     type_traits = stream.ReadShort() << 8;
-    if (type_traits & (rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY | rrlib::rtti::trait_flags::cIS_ARRAY))
+    underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? stream.ReadShort() : 0;
+    switch (GetTypeClassification())
     {
+    case rrlib::rtti::tTypeClassification::LIST:
+    case rrlib::rtti::tTypeClassification::ENUM_BASED_FLAGS:
       element_type = stream.ReadShort();
-      underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? stream.ReadShort() : 0;
-      array_size = (type_traits & rrlib::rtti::trait_flags::cIS_ARRAY) ? stream.ReadInt() : 0;
-      types_checked = 0;
-      local_data_type = rrlib::rtti::tType();
-      name = std::string();
-    }
-    else
-    {
+      break;
+    case rrlib::rtti::tTypeClassification::ARRAY:
+      element_type = stream.ReadShort();
+      array_size = stream.ReadInt();
+      break;
+    case rrlib::rtti::tTypeClassification::RPC_TYPE:
+    case rrlib::rtti::tTypeClassification::INTEGRAL:
+    case rrlib::rtti::tTypeClassification::OTHER_DATA_TYPE:
       name = stream.ReadString();
-      underlying_type = (type_traits & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE) ? stream.ReadShort() : 0;
-      element_type = 0;
-      array_size = 1;
-      if (type_traits & rrlib::rtti::trait_flags::cIS_ENUM)
-      {
-        // Discard enum info
-        short n = stream.ReadShort();
-        uint value_size = stream.ReadByte();
-        for (short i = 0; i < n; i++)
-        {
-          stream.SkipString();
-          if (value_size)
-          {
-            stream.Skip(value_size);
-          }
-        }
-      }
       types_checked = rrlib::rtti::tType::GetTypeCount();
       local_data_type = rrlib::rtti::tType::FindType(name);
+      break;
+    case rrlib::rtti::tTypeClassification::PAIR:
+    case rrlib::rtti::tTypeClassification::TUPLE:
+    {
+      uint tuple_element_count = GetTypeClassification() == rrlib::rtti::tTypeClassification::TUPLE ? stream.ReadShort() : 2;
+      tuple_elements.reserve(tuple_element_count);
+      for (uint i = 0; i < tuple_element_count; i++)
+      {
+        tuple_elements.push_back(stream.ReadShort());
+      }
+    }
+    break;
+    case rrlib::rtti::tTypeClassification::NULL_TYPE:
+      local_data_type = rrlib::rtti::tType();
+      name = local_data_type.GetName();
+      types_checked = rrlib::rtti::tType::GetTypeCount();
+      break;
+    default:
+      throw std::runtime_error("Received erroneous type traits (invalid type classification)");
     }
   }
 }
@@ -157,7 +223,7 @@ rrlib::rtti::tType tRemoteType::GetLocalDataType() const
   if (name.length() && types_checked < rrlib::rtti::tType::GetTypeCount())
   {
     types_checked = rrlib::rtti::tType::GetTypeCount();
-    local_data_type = rrlib::rtti::tType::FindType(GetName());
+    local_data_type = rrlib::rtti::tType::FindType(GetName());  // TODO: lookup by element types or tuple element types could also be done
   }
   return local_data_type;
 }
@@ -167,14 +233,9 @@ const std::string& tRemoteType::GetName() const
   rrlib::thread::tLock lock(mutables_mutex);
   if (name.length() == 0)
   {
-    if (type_traits & rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY)
-    {
-      name = "List<" + (*type_register)[element_type].GetName() + ">";
-    }
-    else if (type_traits & rrlib::rtti::trait_flags::cIS_ARRAY)
-    {
-      name = "Array<" + (*type_register)[element_type].GetName() + ", " + std::to_string(array_size) + ">";
-    }
+    std::stringstream stream;
+    StreamType(stream, *this);
+    name = stream.str();
   }
   return name;
 }
@@ -195,48 +256,78 @@ void tRemoteType::SerializeRegisterEntry(rrlib::serialization::tOutputStream& st
   else
   {
     stream.WriteShort(static_cast<uint16_t>((type.GetTypeTraits() >> 8) & 0xFFFF));
-    if (type.GetTypeTraits() & (rrlib::rtti::trait_flags::cIS_LIST_TYPE_COPY | rrlib::rtti::trait_flags::cIS_ARRAY))
-    {
-      stream.WriteShort(type.GetElementType().GetHandle());
-      if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE)
-      {
-        stream.WriteShort(type.GetUnderlyingType().GetHandle());
-      }
-      if (type.IsArray())
-      {
-        stream.WriteInt(type.GetArraySize());
-      }
-      return;
-    }
-    stream.WriteString(type.GetPlainTypeName());
-    if (stream.GetTargetInfo().custom_info & tSerializationInfoFlags::cJAVA_CLIENT)
-    {
-      stream.WriteInt(type.GetSize());
-    }
     if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cHAS_UNDERLYING_TYPE)
     {
       stream.WriteShort(type.GetUnderlyingType().GetHandle());
     }
-    if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cIS_ENUM)
+    const bool java_client = stream.GetTargetInfo().custom_info & tSerializationInfoFlags::cJAVA_CLIENT;
+
+    switch (type.GetTypeClassification())
     {
-      const make_builder::internal::tEnumStrings* enum_strings = type.GetEnumStringsData();
-      assert(enum_strings->size <= std::numeric_limits<short>::max() + 1); // more values would be quite ridiculous
-      stream.WriteShort(static_cast<uint16_t>(enum_strings->size));
-      bool send_values = enum_strings->non_standard_values;
-      rrlib::rtti::tType underlying_type = type.GetUnderlyingType();
-      const char* value_pointer = static_cast<const char*>(enum_strings->non_standard_values);
-      stream.WriteByte(send_values ? underlying_type.GetSize() : 0); // Note that send_values is no type trait (flag) as it not a compile-time constant (at least not straight-forward)
-      for (size_t j = 0; j < enum_strings->size; j++)
+    case rrlib::rtti::tTypeClassification::LIST:
+    case rrlib::rtti::tTypeClassification::ARRAY:
+    case rrlib::rtti::tTypeClassification::ENUM_BASED_FLAGS:
+      stream.WriteShort(type.GetElementType().GetHandle());
+      if (type.IsArray())
       {
-        const char* enum_string = enum_strings->strings[static_cast<size_t>(make_builder::tEnumStringsFormat::NATURAL)][j];
-        stream.WriteString(enum_string);
-        if (send_values)
+        stream.WriteInt(type.GetArraySize());
+      }
+      break;
+
+    case rrlib::rtti::tTypeClassification::PAIR:
+    case rrlib::rtti::tTypeClassification::TUPLE:
+    {
+      if (java_client)
+      {
+        stream.WriteInt(type.GetSize());
+      }
+      auto tuple_info = type.GetTupleTypes();
+      if (type.GetTypeClassification() != rrlib::rtti::tTypeClassification::PAIR)
+      {
+        stream.WriteShort(tuple_info.second);
+      }
+      for (uint i = 0; i < tuple_info.second; i++)
+      {
+        stream.WriteShort(rrlib::rtti::tType(tuple_info.first[i].type_info).GetHandle());
+      }
+    }
+    break;
+
+    case rrlib::rtti::tTypeClassification::RPC_TYPE:
+      stream.WriteString(type.GetPlainTypeName());
+      break;
+
+    case rrlib::rtti::tTypeClassification::INTEGRAL:
+    case rrlib::rtti::tTypeClassification::OTHER_DATA_TYPE:
+      stream.WriteString(type.GetPlainTypeName());
+      if (java_client)
+      {
+        stream.WriteInt(type.GetSize());
+        if (type.GetTypeTraits() & rrlib::rtti::trait_flags::cIS_ENUM)
         {
-          rrlib::rtti::tTypedConstPointer value(value_pointer, underlying_type);
-          value.Serialize(stream);
-          value_pointer += underlying_type.GetSize();
+          const make_builder::internal::tEnumStrings* enum_strings = type.GetEnumStringsData();
+          assert(enum_strings->size <= std::numeric_limits<short>::max() + 1); // more values would be quite ridiculous
+          stream.WriteShort(static_cast<uint16_t>(enum_strings->size));
+          bool send_values = enum_strings->non_standard_values;
+          rrlib::rtti::tType underlying_type = type.GetUnderlyingType();
+          const char* value_pointer = static_cast<const char*>(enum_strings->non_standard_values);
+          stream.WriteByte(send_values ? underlying_type.GetSize() : 0); // Note that send_values is no type trait (flag) as it not a compile-time constant (at least not straight-forward)
+          for (size_t j = 0; j < enum_strings->size; j++)
+          {
+            const char* enum_string = enum_strings->strings[static_cast<size_t>(make_builder::tEnumStringsFormat::NATURAL)][j];
+            stream.WriteString(enum_string);
+            if (send_values)
+            {
+              rrlib::rtti::tTypedConstPointer value(value_pointer, underlying_type);
+              value.Serialize(stream);
+              value_pointer += underlying_type.GetSize();
+            }
+          }
         }
       }
+      break;
+    case rrlib::rtti::tTypeClassification::NULL_TYPE:
+      break;
     }
   }
 }

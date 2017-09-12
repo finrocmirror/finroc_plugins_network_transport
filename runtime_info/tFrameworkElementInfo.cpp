@@ -168,7 +168,7 @@ rrlib::serialization::tInputStream& operator >> (rrlib::serialization::tInputStr
   // We only receive (shared) ports
   info.static_info.type = &stream.ReadRegisterEntry<tRemoteType>();
   stream >> info.static_info.flags;
-  if ((info.static_info.type->GetTypeTraits() & rrlib::rtti::trait_flags::cIS_DATA_TYPE) || stream.GetSourceInfo().revision == 0)
+  if ((info.static_info.type->GetTypeClassification() != rrlib::rtti::tTypeClassification::RPC_TYPE) || stream.GetSourceInfo().revision == 0)
   {
     stream >> info.dynamic_info;
   }
