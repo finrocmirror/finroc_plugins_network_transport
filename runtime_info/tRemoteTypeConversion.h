@@ -95,10 +95,17 @@ public:
     {
       stream << operation->SupportedDestinationTypes().single_type;
     }
-    stream.WriteBoolean(operation->Parameter());
+
+    enum { HAS_PARAMETER = 1, NOT_USUALLY_COMBINED_WITH = 2 };
+    uint8_t flags = (operation->Parameter() ? HAS_PARAMETER : 0) | (operation->GetNotUsuallyCombinedWithHandle() != 0xFFFF ? NOT_USUALLY_COMBINED_WITH : 0);
+    stream.WriteByte(flags);
     if (operation->Parameter())
     {
       stream << operation->Parameter();
+    }
+    if (flags & NOT_USUALLY_COMBINED_WITH)
+    {
+      stream << operation->GetNotUsuallyCombinedWithHandle();
     }
   }
 
