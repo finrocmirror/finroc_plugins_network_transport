@@ -164,6 +164,7 @@ struct tFrameworkElementInfo
         if (shared_port)
         {
           element.GetPath(link_data[i].path, i);
+          link_data[i].path = link_data[i].path.MakeRelative();
         }
         link_data[i].name = element.GetLink(i).GetName();
         link_data[i].parent_handle = element.GetParent(i)->GetHandle();
@@ -260,6 +261,7 @@ struct tFrameworkElementInfo
       if (shared_port)
       {
         framework_element.GetPath(link_data[i].path, i);
+        link_data[i].path = link_data[i].path.MakeRelative();
       }
       alt_link_name_storage[i] = &framework_element.GetName();
       link_data[i].parent_handle = framework_element.GetParent(i)->GetHandle();
