@@ -75,11 +75,12 @@ enum tDataEncoding
   cSTRING_ENCODING = 1,
   cXML_ENCODING = 2,
   cBINARY_COMPRESSED_ENCODING = 3,
+  cNONE = 4
 };
 enum tFlags
 {
-  cTO_SERVER = 4,                  // message goes to server -> connection handle is not the receiver port handle
-  cHIGH_PRIORITY = 8               // use high priority connection (currently only relevant for pull calls)
+  cTO_SERVER = 8,                  // message goes to server -> connection handle is not the receiver port handle
+  cHIGH_PRIORITY = 16              // use high priority connection (currently only relevant for pull calls)
 };
 }
 

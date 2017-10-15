@@ -297,7 +297,7 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
     tPortValueChange message;
     message.Deserialize(stream, false);
     uint8_t flags = message.Get<1>();
-    message_flags::tDataEncoding encoding = static_cast<message_flags::tDataEncoding>(flags & 0x3);
+    message_flags::tDataEncoding encoding = static_cast<message_flags::tDataEncoding>(flags & 0x7);
     std::pair<core::tAbstractPort*, tNetworkPortInfo*> port = GetNetworkConnectorPort(server_port_map, message.Get<0>(), flags & message_flags::cTO_SERVER);
     if (port.first && port.first->IsReady() && data_ports::IsDataFlowType(port.first->GetDataType()))
     {
@@ -428,7 +428,7 @@ bool tRemoteRuntime::ProcessMessage(tOpCode opcode, rrlib::serialization::tMemor
     tPullCall message;
     message.Deserialize(stream);
     uint8_t flags = message.Get<2>();
-    message_flags::tDataEncoding encoding = static_cast<message_flags::tDataEncoding>(flags & 0x3);
+    message_flags::tDataEncoding encoding = static_cast<message_flags::tDataEncoding>(flags & 0x7);
     std::pair<core::tAbstractPort*, tNetworkPortInfo*> port = GetNetworkConnectorPort(server_port_map, message.Get<0>(), flags & message_flags::cTO_SERVER);
     rrlib::serialization::tOutputStream& write_stream = GetConnection(flags & message_flags::cHIGH_PRIORITY)->CurrentWriteStream();
     if (port.first && port.first->IsReady() && data_ports::IsDataFlowType(port.first->GetDataType()))
